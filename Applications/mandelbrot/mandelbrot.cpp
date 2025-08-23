@@ -120,11 +120,14 @@ int main(int argc, char **argv) {
   for (int pixel = 0; pixel < pixels.size(); pixel++) {
     uint8_t byte = 0;
 
-    double y = (pixel / (imageSize / 8));
+    size_t byteRow = imageSize / 8;
+    size_t pixelColumn = pixel % byteRow;
+
+    double y = pixel / byteRow;
 
 #pragma unroll(8)
     for (int bit = 0; bit < 8; bit++) {
-      double x = (pixel % (imageSize / 8)) * 8 + bit;
+      double x = pixelColumn * 8 + bit;
 
       double cx = REAL_INIT_RANGE + x * scaleX;
       double cy = IMAG_INIT_RANGE + y * scaleX;
