@@ -1,18 +1,8 @@
-//===----------------------------------------------------------------------===//
-// Mandelbrot
+//===-------------------------------------------------------------------------===
+// Copyright © 2004-2008 Brent Fulgham, 2005-2024 Isaac Gouy All rights
+// reserved.
 //
-// Calculates the mandelbrot set and ouputs it as a 1-bit P4 portable bitmap
-// image.
-//
-// Each pixel is mapped from a rectangular region of the complex plane, and the
-// Mandelbrot iteration determines whether the pixel is black (in the set) or
-// white (escaped).
-//
-// Usage: ./mandelbrot <image_size>
-//
-//===----------------------------------------------------------------------===//
-//
-// Copyright 2025 Victor Briganti
+// Modified in 2025 by Victor Briganti
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -24,10 +14,15 @@
 // this list of conditions and the following disclaimer in the documentation
 // and/or other materials provided with the distribution.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+// 3. Neither the name "The Computer Language Benchmarks Game" nor the name "The
+// Benchmarks Game" nor the name "The Computer Language Shootout Benchmarks" nor
+// the names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 // LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
 // CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
 // SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -35,6 +30,17 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//===----------------------------------------------------------------------===//
+// Mandelbrot
+//
+// Calculates the mandelbrot set and ouputs it as a 1-bit P4 portable bitmap
+// image.
+//
+// Each pixel is mapped from a rectangular region of the complex plane, and the
+// Mandelbrot iteration determines whether the pixel is black (in the set) or
+// white (escaped).
+//
+// Usage: ./mandelbrot <image_size>
 //
 //===----------------------------------------------------------------------===//
 
