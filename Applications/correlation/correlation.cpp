@@ -2,54 +2,41 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <vector>
 
 //===------------------------------------------------------------------------===
 // Correlation
 //===------------------------------------------------------------------------===
 
-double correlation(std::vector<std::vector<double>> &values, int x, int y) {
+double correlation(double *x, double *y, int rows) {
   double sumX = 0;
   double sumY = 0;
   double sumXY = 0;
   double sumX2 = 0;
   double sumY2 = 0;
 
-  for (size_t i = 0; i < values[x].size(); i++) {
-    sumX += values[x][i];
-    sumY += values[x][i];
-    sumXY += values[x][i] * values[y][i];
-    sumX2 += values[x][i] * values[x][i];
-    sumY2 += values[y][i] * values[y][i];
+  for (size_t i = 0; i < rows; i++) {
+    sumX += x[i];
+    sumY += y[i];
+    sumXY += x[i] * y[i];
+    sumX2 += x[i] * x[i];
+    sumY2 += y[i] * y[i];
   }
 
-  double numerador = values[x].size() * sumXY - sumX * sumY;
-
-  double denominador1 = values[x].size() * sumX2 - (sumX * sumX);
-  double denominador2 = values[x].size() * sumY2 - (sumY * sumY);
-  double denominador = std::sqrt(denominador1 * denominador2);
-
+  double numerador = rows * sumXY - sumX * sumY;
+  double denominador = std::sqrt((rows * sumX2 - (sumX * sumX)) *
+                                 (rows * sumY2 - (sumY * sumY)));
   return numerador / denominador;
 }
 
-std::vector<std::vector<double>>
-correlationMatrix(std::vector<std::vector<double>> &values) {
-  std::vector<std::vector<double>> matrix;
+double *correlationMatrix(double **&data, int columns, int rows) {
+  double *matrix = new double[columns * rows]();
 
-  for (size_t i = 0; i < values.size(); i++) {
-    std::vector<double> row(values.size(), 0.0);
-    matrix.push_back(row);
-  }
-
-  for (size_t i = 0; i < values.size(); i++) {
-    for (size_t j = i; j < values.size(); j++) {
-      if (j == i) {
-        matrix[i][j] = 1.0;
-      } else {
-        double r = correlation(values, i, j);
-        matrix[i][j] = r;
-        matrix[j][i] = r;
-      }
+#pragma omp parallel for collapse(2) shared(matrix)
+  for (int i = 0; i < columns; i++) {
+    for (int j = i; j < columns; j++) {
+      double r = (j == i) ? 1.0 : correlation(data[i], data[j], rows);
+      matrix[i * columns + j] = r;
+      matrix[j * columns + i] = r;
     }
   }
 
@@ -70,32 +57,31 @@ std::pair<int, int> readDimensions(std::ifstream &file) {
   return {columnNum, rowNum};
 }
 
-std::vector<std::vector<double>> readData(std::ifstream &file, int columns,
-                                          int rows) {
-  std::vector<std::vector<double>> values;
-  values.reserve(columns);
+double **readData(std::ifstream &file, int columns, int rows) {
+  double **data = new double *[columns];
 
   for (int i = 0; i < columns; i++) {
-    std::vector<double> column;
-    column.reserve(rows);
-    values.push_back(column);
+    data[i] = new double[rows];
   }
 
+  int row = 0;
   std::string line;
   while (getline(file, line)) {
     int pos = 0;
 
-    for (int i = 0; i < columns; i++) {
-      if (i + 1 == columns) {
-        values[i].push_back(std::stod(line.substr(pos, line.size())));
+    for (int column = 0; column < columns; column++) {
+      if (column + 1 == columns) {
+        data[column][row] = std::stod(line.substr(pos, line.size()));
       } else {
-        values[i].push_back(std::stod(line.substr(pos, line.find(','))));
+        data[column][row] = std::stod(line.substr(pos, line.find(',')));
         pos = line.find(',', pos) + 1;
       }
     }
+
+    row++;
   }
 
-  return values;
+  return data;
 }
 
 //===------------------------------------------------------------------------===
@@ -115,14 +101,14 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  auto [columnNum, rowNum] = readDimensions(file);
-  auto values = readData(file, columnNum, rowNum);
+  auto [columns, rows] = readDimensions(file);
+  double **data = readData(file, columns, rows);
 
-  auto matrix = correlationMatrix(values);
+  double *matrix = correlationMatrix(data, columns, rows);
 
-  for (size_t i = 0; i < columnNum; i++) {
-    for (size_t j = 0; j < columnNum; j++) {
-      std::cout << matrix[i][j] << " ";
+  for (int i = 0; i < columns; i++) {
+    for (int j = 0; j < columns; j++) {
+      std::cout << matrix[i * columns + j] << " ";
     }
     std::cout << "\n";
   }
