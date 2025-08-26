@@ -160,6 +160,14 @@ double **readData(std::ifstream &file, int columns, int rows) {
   return data;
 }
 
+void print_matrix(double *matrix, int columns) {
+  for (int i = 0; i < columns; i++) {
+    for (int j = 0; j < columns; j++) {
+      std::cout << matrix[i * columns + j] << (j + 1 == columns ? " " : "\n");
+    }
+  }
+}
+
 //===------------------------------------------------------------------------===
 // Main
 //===------------------------------------------------------------------------===
@@ -181,13 +189,7 @@ int main(int argc, char **argv) {
   double **data = readData(file, columns, rows);
 
   double *matrix = correlationMatrix(data, columns, rows);
-
-  for (int i = 0; i < columns; i++) {
-    for (int j = 0; j < columns; j++) {
-      std::cout << matrix[i * columns + j] << " ";
-    }
-    std::cout << "\n";
-  }
+  print_matrix(matrix, columns);
 
   return 0;
 }
