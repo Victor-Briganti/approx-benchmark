@@ -118,9 +118,7 @@ unsigned char *convert(const float *image, int width, int height) {
 //===------------------------------------------------------------------------===
 
 float *deriche(const float *imageIn, int width, int height, float alpha) {
-  float *imageOut = new float[width * height];
-  float *y1 = new float[width * height];
-  float *y2 = new float[width * height];
+  float *imageOut = new float[width * height]();
 
   const float k = (1.0f - expf(-alpha)) * (1.0f - expf(-alpha)) /
                   (1.0f + 2.0f * alpha * expf(-alpha) - expf(-2.0f * alpha));
@@ -135,7 +133,7 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
   const float b1 = powf(2.0f, -alpha);
   const float b2 = -expf(-2.0f * alpha);
 
-#pragma omp parallel shared(imageOut, y1, y2)
+#pragma omp parallel shared(imageOut)
   {
 #pragma omp for
     for (int i = 0; i < width; i++) {
@@ -143,11 +141,11 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
       float ym1 = 0.0f;
       float ym2 = 0.0f;
       for (int j = 0; j < height; j++) {
-        y1[j * width + i] =
+        imageOut[j * width + i] =
             a1 * imageIn[j * width + i] + a2 * xm1 + b1 * ym1 + b2 * ym2;
         xm1 = imageIn[j * width + i];
         ym2 = ym1;
-        ym1 = y1[j * width + i];
+        ym1 = imageOut[j * width + i];
       }
     }
 
@@ -158,18 +156,13 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
       float yp1 = 0.0f;
       float yp2 = 0.0f;
       for (int j = height - 1; j >= 0; j--) {
-        y2[j * width + i] = a3 * xp1 + a4 * xp2 + b1 * yp1 + b2 * yp2;
+        const float prev = imageOut[j * width + i];
+        const float res = a3 * xp1 + a4 * xp2 + b1 * yp1 + b2 * yp2;
+        imageOut[j * width + i] += res;
         xp2 = xp1;
-        xp1 = imageIn[j * width + i];
+        xp1 = res;
         yp2 = yp1;
-        yp1 = y2[j * width + i];
-      }
-    }
-
-#pragma omp for
-    for (int i = 0; i < width; i++) {
-      for (int j = 0; j < height; j++) {
-        imageOut[j * width + i] = y1[j * width + i] + y2[j * width + i];
+        yp1 = prev;
       }
     }
 
@@ -179,11 +172,13 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
       float ym1 = 0.0f;
       float ym2 = 0.0f;
       for (int i = 0; i < width; i++) {
-        y1[j * width + i] =
+        const float prev = imageOut[j * width + i];
+        const float res =
             a5 * imageOut[j * width + i] + a6 * tm1 + b1 * ym1 + b2 * ym2;
-        tm1 = imageOut[j * width + i];
+        imageOut[j * width + i] += res;
+        tm1 = prev;
         ym2 = ym1;
-        ym1 = y1[j * width + i];
+        ym1 = res;
       }
     }
 
@@ -194,24 +189,17 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
       float yp1 = 0.0f;
       float yp2 = 0.0f;
       for (int i = width - 1; i >= 0; i--) {
-        y2[j * width + i] = a7 * tp1 + a8 * tp2 + b1 * yp1 + b2 * yp2;
+        const float prev = imageOut[j * width + i];
+        const float res = a7 * tp1 + a8 * tp2 + b1 * yp1 + b2 * yp2;
+        imageOut[j * width + i] += res;
         tp2 = tp1;
-        tp1 = imageOut[j * width + i];
+        tp1 = prev;
         yp2 = yp1;
-        yp1 = y2[j * width + i];
-      }
-    }
-
-#pragma omp for
-    for (int i = 0; i < width; i++) {
-      for (int j = 0; j < height; j++) {
-        imageOut[j * width + i] = y1[j * width + i] + y2[j * width + i];
+        yp1 = res;
       }
     }
   }
 
-  delete[] y1;
-  delete[] y2;
   return imageOut;
 }
 
