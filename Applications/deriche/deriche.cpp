@@ -135,7 +135,7 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
 
 #pragma omp parallel shared(imageOut)
   {
-#pragma omp for
+#pragma omp for schedule(static)
     for (int i = 0; i < width; i++) {
       float xm1 = 0.0f;
       float ym1 = 0.0f;
@@ -149,7 +149,7 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
       }
     }
 
-#pragma omp for
+#pragma omp for schedule(static)
     for (int i = 0; i < width; i++) {
       float xp1 = 0.0f;
       float xp2 = 0.0f;
@@ -166,7 +166,7 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
       }
     }
 
-#pragma omp for
+#pragma omp for schedule(static)
     for (int j = 0; j < height; j++) {
       float tm1 = 0.0f;
       float ym1 = 0.0f;
@@ -182,7 +182,7 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
       }
     }
 
-#pragma omp for
+#pragma omp for schedule(static)
     for (int j = 0; j < height; j++) {
       float tp1 = 0.0f;
       float tp2 = 0.0f;

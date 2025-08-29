@@ -6,6 +6,18 @@
 // Kmeans
 //===------------------------------------------------------------------------===
 
+void kmeans_clustering(float *features, int numFeatures, int numPoints,
+                       int numClusters, float threshold, int *membership) {
+  float *clusters = new float[numClusters * numFeatures];
+
+  for (int i = 0; i < numClusters; i++) {
+    int n = rand() % numPoints;
+    for (int j = 0; j < numFeatures; j++) {
+      clusters[i * numFeatures + j] = features[n * numFeatures + j];
+    }
+  }
+}
+
 //===------------------------------------------------------------------------===
 // Helper Function
 //===------------------------------------------------------------------------===
@@ -65,10 +77,5 @@ int main(int argc, char **argv) {
   auto [numObjects, numAttributes] = readDatasetInfo(file);
   float *data = readDataset(file, numObjects, numAttributes);
 
-  for (int i = 0; i < numObjects; i++) {
-    for (int j = 0; j < numAttributes; j++) {
-      std::cout << data[i * numAttributes + j]
-                << (j + 1 == numAttributes ? "\n" : ",");
-    }
-  }
+  srand(1);
 }

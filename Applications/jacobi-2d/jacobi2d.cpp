@@ -82,7 +82,7 @@ void output_matrix(double *&matrix, size_t size) {
 double *init_matrix(size_t size, int offset) {
   double *matrix = new double[size * size];
 
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2) schedule(static)
   for (size_t i = 0; i < size; i++) {
     for (size_t j = 0; j < size; j++) {
       matrix[i * size + j] =
@@ -100,7 +100,7 @@ double *init_matrix(size_t size, int offset) {
 void jacobi_2d(int steps, size_t size, double *A, double *B) {
 #pragma omp parallel
   for (int t = 0; t < steps; t++) {
-#pragma omp for collapse(2)
+#pragma omp for collapse(2) schedule(static)
     for (size_t i = 1; i < size - 1; i++) {
       for (size_t j = 1; j < size - 1; j++) {
         B[i * size + j] = 0.2 * (A[i * size + j] + A[i * size + j - 1] +
@@ -108,7 +108,7 @@ void jacobi_2d(int steps, size_t size, double *A, double *B) {
       }
     }
 
-#pragma omp for collapse(2)
+#pragma omp for collapse(2) schedule(static)
     for (size_t i = 1; i < size - 1; i++) {
       for (size_t j = 1; j < size - 1; j++) {
         A[i * size + j] = 0.2 * (B[i * size + j] + B[i * size + j - 1] +

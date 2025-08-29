@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
 
 #pragma omp parallel shared(A, B, C, D)
   {
-#pragma omp for collapse(2)
+#pragma omp for collapse(2) schedule(static)
     for (size_t i = 0; i < matrixSize; ++i) {
       for (size_t k = 0; k < matrixSize; ++k) {
         uint64_t columnVal = A[i * matrixSize + k];
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
       }
     }
 
-#pragma omp for collapse(2)
+#pragma omp for collapse(2) schedule(static)
     for (size_t i = 0; i < matrixSize; ++i) {
       for (size_t k = 0; k < matrixSize; ++k) {
         uint64_t columnVal = C[i * matrixSize + k];

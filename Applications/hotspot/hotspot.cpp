@@ -163,7 +163,7 @@ void singleIteration(double *result, double *temp, const double *power, int row,
 
 #pragma omp parallel shared(result, temp, power)
   {
-#pragma omp for schedule(static)
+#pragma omp for schedule(static) nowait
     for (int c = 1; c < col - 1; c++) {
       // Edge 1
       double deltaEdge1 =
@@ -186,7 +186,7 @@ void singleIteration(double *result, double *temp, const double *power, int row,
       result[(row - 1) * col + c] = temp[(row - 1) * col + c] + deltaEdge3;
     }
 
-#pragma omp for schedule(static)
+#pragma omp for schedule(static) nowait
     for (int r = 1; r < row - 1; r++) {
       // Edge 2
       double deltaEdge2 =
