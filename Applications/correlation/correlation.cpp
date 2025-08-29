@@ -149,7 +149,8 @@ double **readData(std::ifstream &file, int columns, int rows) {
       if (column + 1 == columns) {
         data[column][row] = std::stod(line.substr(pos, line.size()));
       } else {
-        data[column][row] = std::stod(line.substr(pos, line.find(',')));
+        data[column][row] =
+            std::stod(line.substr(pos, line.find(',', pos) - pos));
         pos = line.find(',', pos) + 1;
       }
     }
@@ -163,7 +164,7 @@ double **readData(std::ifstream &file, int columns, int rows) {
 void print_matrix(double *matrix, int columns) {
   for (int i = 0; i < columns; i++) {
     for (int j = 0; j < columns; j++) {
-      std::cout << matrix[i * columns + j] << (j + 1 == columns ? " " : "\n");
+      std::cout << matrix[i * columns + j] << (j + 1 == columns ? "\n" : ",");
     }
   }
 }
