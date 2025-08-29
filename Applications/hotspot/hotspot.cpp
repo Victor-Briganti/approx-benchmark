@@ -74,6 +74,7 @@
 //
 //===------------------------------------------------------------------------===
 
+#include <cstring>
 #include <fstream>
 #include <iostream>
 
@@ -122,110 +123,132 @@ double *readData(std::ifstream &file, int size) {
 // Hotspot
 //===------------------------------------------------------------------------===
 
-void singleIteration(double *result, double *power, double *temp, int row,
+void singleIteration(double *result, double *temp, const double *power, int row,
                      int col, double Cap, double Rx, double Ry, double Rz,
                      double step) {
+  const double stepCap = step / Cap;
 
-#pragma omp parallel
+  // Corner 1
+  double deltaCorner1 =
+      stepCap * (power[0] + (temp[1] - temp[0]) / Rx +
+                 (temp[col] - temp[0]) / Ry + (amb_temp - temp[0]) / Rz);
+  result[0] = temp[0] + deltaCorner1;
+
+  // Corner 2
+  double deltaCorner2 =
+      stepCap * (power[col - 1] + (temp[col - 2] - temp[col - 1]) / Rx +
+                 (temp[2 * col - 1] - temp[col - 1]) / Ry +
+                 (amb_temp - temp[col - 1]) / Rz);
+  result[col - 1] = temp[col - 1] + deltaCorner2;
+
+  // Corner 3
+  double deltaCorner3 =
+      stepCap *
+      (power[(row - 1) * col + col - 1] +
+       (temp[(row - 1) * col + col - 2] - temp[(row - 1) * col + col - 1]) /
+           Rx +
+       (temp[(row - 2) * col + col - 1] - temp[(row - 1) * col + col - 1]) /
+           Ry +
+       (amb_temp - temp[(row - 1) * col + col - 1]) / Rz);
+  result[(row - 1) * col + (col - 1)] =
+      temp[(row - 1) * col + (col - 1)] + deltaCorner3;
+
+  // Corner 4
+  double deltaCorner4 =
+      stepCap * (power[(row - 1) * col] +
+                 (temp[(row - 1) * col + 1] - temp[(row - 1) * col]) / Rx +
+                 (temp[(row - 2) * col] - temp[(row - 1) * col]) / Ry +
+                 (amb_temp - temp[(row - 1) * col]) / Rz);
+  result[(row - 1) * col] = temp[(row - 1) * col] + deltaCorner4;
+
+#pragma omp parallel shared(result, temp, power)
   {
-#pragma omp for collapse(2)
-    for (int r = 0; r < row; r++) {
-      for (int c = 0; c < col; c++) {
-        double delta = 0.0;
-        /*	Corner 1	*/
-        if ((r == 0) && (c == 0)) {
-          delta = (step / Cap) *
-                  (power[0] + (temp[1] - temp[0]) / Rx +
-                   (temp[col] - temp[0]) / Ry + (amb_temp - temp[0]) / Rz);
-        } /*	Corner 2	*/
-        else if ((r == 0) && (c == col - 1)) {
-          delta = (step / Cap) *
-                  (power[c] + (temp[c - 1] - temp[c]) / Rx +
-                   (temp[c + col] - temp[c]) / Ry + (amb_temp - temp[c]) / Rz);
-        } /*	Corner 3	*/
-        else if ((r == row - 1) && (c == col - 1)) {
-          delta = (step / Cap) *
-                  (power[r * col + c] +
-                   (temp[r * col + c - 1] - temp[r * col + c]) / Rx +
-                   (temp[(r - 1) * col + c] - temp[r * col + c]) / Ry +
-                   (amb_temp - temp[r * col + c]) / Rz);
-        } /*	Corner 4	*/
-        else if ((r == row - 1) && (c == 0)) {
-          delta = (step / Cap) *
-                  (power[r * col] + (temp[r * col + 1] - temp[r * col]) / Rx +
-                   (temp[(r - 1) * col] - temp[r * col]) / Ry +
-                   (amb_temp - temp[r * col]) / Rz);
-        } /*	Edge 1	*/
-        else if (r == 0) {
-          delta = (step / Cap) *
-                  (power[c] + (temp[c + 1] + temp[c - 1] - 2.0 * temp[c]) / Rx +
-                   (temp[col + c] - temp[c]) / Ry + (amb_temp - temp[c]) / Rz);
-        } /*	Edge 2	*/
-        else if (c == col - 1) {
-          delta = (step / Cap) *
-                  (power[r * col + c] +
-                   (temp[(r + 1) * col + c] + temp[(r - 1) * col + c] -
-                    2.0 * temp[r * col + c]) /
-                       Ry +
-                   (temp[r * col + c - 1] - temp[r * col + c]) / Rx +
-                   (amb_temp - temp[r * col + c]) / Rz);
-        } /*	Edge 3	*/
-        else if (r == row - 1) {
-          delta = (step / Cap) *
-                  (power[r * col + c] +
-                   (temp[r * col + c + 1] + temp[r * col + c - 1] -
-                    2.0 * temp[r * col + c]) /
-                       Rx +
-                   (temp[(r - 1) * col + c] - temp[r * col + c]) / Ry +
-                   (amb_temp - temp[r * col + c]) / Rz);
-        } /*	Edge 4	*/
-        else if (c == 0) {
-          delta = (step / Cap) * (power[r * col] +
-                                  (temp[(r + 1) * col] + temp[(r - 1) * col] -
-                                   2.0 * temp[r * col]) /
-                                      Ry +
-                                  (temp[r * col + 1] - temp[r * col]) / Rx +
-                                  (amb_temp - temp[r * col]) / Rz);
-        } /*	Inside the chip	*/
-        else {
-          delta = (step / Cap) *
-                  (power[r * col + c] +
-                   (temp[(r + 1) * col + c] + temp[(r - 1) * col + c] -
-                    2.0 * temp[r * col + c]) /
-                       Ry +
-                   (temp[r * col + c + 1] + temp[r * col + c - 1] -
-                    2.0 * temp[r * col + c]) /
-                       Rx +
-                   (amb_temp - temp[r * col + c]) / Rz);
-        }
+#pragma omp for schedule(static)
+    for (int c = 1; c < col - 1; c++) {
+      // Edge 1
+      double deltaEdge1 =
+          stepCap *
+          (power[c] + (temp[c + 1] + temp[c - 1] - 2.0 * temp[c]) / Rx +
+           (temp[col + c] - temp[c]) / Ry + (amb_temp - temp[c]) / Rz);
 
-        /*	Update Temperatures	*/
-        result[r * col + c] = temp[r * col + c] + delta;
-      }
+      result[c] = temp[c] + deltaEdge1;
+
+      // Edge 3
+      double deltaEdge3 =
+          stepCap *
+          (power[(row - 1) * col + c] +
+           (temp[(row - 1) * col + c + 1] + temp[(row - 1) * col + c - 1] -
+            2.0 * temp[(row - 1) * col + c]) /
+               Rx +
+           (temp[((row - 1) - 1) * col + c] - temp[(row - 1) * col + c]) / Ry +
+           (amb_temp - temp[(row - 1) * col + c]) / Rz);
+
+      result[(row - 1) * col + c] = temp[(row - 1) * col + c] + deltaEdge3;
     }
 
-#pragma omp for collapse(2)
-    for (int r = 0; r < row; r++) {
-      for (int c = 0; c < col; c++) {
-        temp[r * col + c] = result[r * col + c];
+#pragma omp for schedule(static)
+    for (int r = 1; r < row - 1; r++) {
+      // Edge 2
+      double deltaEdge2 =
+          stepCap *
+          (power[r * col + (col - 1)] +
+           (temp[(r + 1) * col + (col - 1)] + temp[(r - 1) * col + (col - 1)] -
+            2.0 * temp[r * col + (col - 1)]) /
+               Ry +
+           (temp[r * col + (col - 1) - 1] - temp[r * col + (col - 1)]) / Rx +
+           (amb_temp - temp[r * col + (col - 1)]) / Rz);
+
+      result[r * col + (col - 1)] = temp[r * col + (col - 1)] + deltaEdge2;
+
+      // Edge 4
+      double deltaEdge4 =
+          stepCap *
+          (power[r * col] +
+           (temp[(r + 1) * col] + temp[(r - 1) * col] - 2.0 * temp[r * col]) /
+               Ry +
+           (temp[r * col + 1] - temp[r * col]) / Rx +
+           (amb_temp - temp[r * col]) / Rz);
+
+      result[r * col] = temp[r * col] + deltaEdge4;
+    }
+
+#pragma omp for schedule(static)
+    for (int r = 1; r < row - 1; r++) {
+#pragma omp simd
+      for (int c = 1; c < col - 1; c++) {
+        // Inside the Chip
+        double deltaChip =
+            stepCap * (power[r * col + c] +
+                       (temp[(r + 1) * col + c] + temp[(r - 1) * col + c] -
+                        2.0 * temp[r * col + c]) /
+                           Ry +
+                       (temp[r * col + c + 1] + temp[r * col + c - 1] -
+                        2.0 * temp[r * col + c]) /
+                           Rx +
+                       (amb_temp - temp[r * col + c]) / Rz);
+
+        result[r * col + c] = temp[r * col + c] + deltaChip;
       }
     }
   }
+
+  std::memcpy(temp, result, sizeof(double) * row * col);
 }
 
 void computeThermalTemp(double *result, int iterations, double *power,
                         double *temp, int row, int col) {
-  double grid_height = chip_height / row;
-  double grid_width = chip_width / col;
-  double Cap = FACTOR_CHIP * SPEC_HEAT_SI * t_chip * grid_width * grid_height;
-  double Rx = grid_width / (2.0 * K_SI * t_chip * grid_height);
-  double Ry = grid_height / (2.0 * K_SI * t_chip * grid_width);
-  double Rz = t_chip / (K_SI * grid_height * grid_width);
-  double max_slope = MAX_PD / (FACTOR_CHIP * t_chip * SPEC_HEAT_SI);
-  double step = PRECISION / max_slope;
+  const double grid_height = chip_height / row;
+  const double grid_width = chip_width / col;
+  const double Cap =
+      FACTOR_CHIP * SPEC_HEAT_SI * t_chip * grid_width * grid_height;
+  const double Rx = grid_width / (2.0 * K_SI * t_chip * grid_height);
+  const double Ry = grid_height / (2.0 * K_SI * t_chip * grid_width);
+  const double Rz = t_chip / (K_SI * grid_height * grid_width);
+  const double max_slope = MAX_PD / (FACTOR_CHIP * t_chip * SPEC_HEAT_SI);
+  const double step = PRECISION / max_slope;
 
   for (int i = 0; i < iterations; i++) {
-    singleIteration(result, power, temp, row, col, Cap, Rx, Ry, Rz, step);
+    singleIteration(result, temp, power, row, col, Cap, Rx, Ry, Rz, step);
   }
 }
 
@@ -237,7 +260,7 @@ int main(int argc, char **argv) {
   if (argc < 4) {
     std::cerr << "Invalid number of arguments!\n";
     std::cerr << "Usage: " << argv[0]
-              << "<grid> <num_iterations> <power_file> <temp_file>\n";
+              << " <grid> <num_iterations> <power_file> <temp_file>\n";
     return -1;
   }
 
