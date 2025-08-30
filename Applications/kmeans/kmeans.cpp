@@ -1,3 +1,5 @@
+#include <cfloat>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <utility>
@@ -6,16 +8,88 @@
 // Kmeans
 //===------------------------------------------------------------------------===
 
-void kmeans_clustering(float *features, int numFeatures, int numPoints,
-                       int numClusters, float threshold, int *membership) {
-  float *clusters = new float[numClusters * numFeatures];
+int find_nearest_point(float *centroids, int numClusters, float *features,
+                       int point, int numFeatures) {
+  int index = -1;
+  float minDist = FLT_MAX;
 
   for (int i = 0; i < numClusters; i++) {
-    int n = rand() % numPoints;
+    float dist = 0.0f;
+
     for (int j = 0; j < numFeatures; j++) {
-      clusters[i * numFeatures + j] = features[n * numFeatures + j];
+      int idxCentroid = i * numFeatures + j;
+      int idxPoint = point * numFeatures + j;
+
+      float diff = centroids[idxCentroid] - features[idxPoint];
+      dist += diff * diff;
+    }
+
+    if (dist < minDist) {
+      index = i;
+      minDist = dist;
     }
   }
+
+  return index;
+}
+
+float *kmeans_clustering(float *features, int numFeatures, int numPoints,
+                         int numClusters, int iterations, float threshold) {
+  float *centroids = new float[numClusters * numFeatures];
+  float *newCentroids = new float[numClusters * numFeatures]();
+  int *membership = new int[numPoints];
+  int *newCentroidsLen = new int[numClusters]();
+
+  for (int i = 0; i < numPoints; i++) {
+    membership[i] = -1;
+  }
+
+  for (int i = 0; i < numClusters; i++) {
+    int n = (rand() % numPoints);
+    for (int j = 0; j < numFeatures; j++) {
+      centroids[i * numFeatures + j] = features[n * numFeatures + j];
+    }
+  }
+
+  for (int i = 0; i < iterations; i++) {
+    double delta = 0.0f;
+
+    for (int j = 0; j < numPoints; j++) {
+      int index =
+          find_nearest_point(centroids, numClusters, features, j, numFeatures);
+
+      if (membership[j] != index) {
+        delta += 1.0;
+      }
+
+      membership[j] = index;
+
+      newCentroidsLen[index]++;
+      for (int k = 0; k < numFeatures; k++) {
+        newCentroids[index * numFeatures + k] += features[j * numFeatures + k];
+      }
+    }
+
+    for (int j = 0; j < numClusters; j++) {
+      for (int k = 0; k < numFeatures; k++) {
+        if (newCentroidsLen[j] > 0) {
+          centroids[j * numFeatures + k] =
+              newCentroids[j * numFeatures + k] / newCentroidsLen[j];
+        }
+        newCentroids[j * numFeatures + k] = 0.0f;
+      }
+      newCentroidsLen[j] = 0;
+    }
+
+    if (delta <= threshold) {
+      break;
+    }
+  }
+
+  delete[] newCentroids;
+  delete[] membership;
+  delete[] newCentroidsLen;
+  return centroids;
 }
 
 //===------------------------------------------------------------------------===
@@ -26,26 +100,26 @@ std::pair<int, int> readDatasetInfo(std::ifstream &file) {
   std::string line;
   getline(file, line);
 
-  int numObjects = std::stoi(line.substr(0, line.find(' ')));
-  int numAttributes = std::stoi(line.substr(line.find(' '), line.size()));
+  int numPoints = std::stoi(line.substr(0, line.find(' ')));
+  int numFeatures = std::stoi(line.substr(line.find(' '), line.size()));
 
-  return {numObjects, numAttributes};
+  return {numPoints, numFeatures};
 }
 
-float *readDataset(std::ifstream &file, int numObjects, int numAttributes) {
-  float *attributes = new float[numObjects * numAttributes];
+float *readDataset(std::ifstream &file, int numPoints, int numFeatures) {
+  float *attributes = new float[numPoints * numFeatures];
 
   int object = 0;
   std::string line;
   while (getline(file, line)) {
     int pos = 0;
 
-    for (int att = 0; att < numAttributes; att++) {
-      if (att + 1 == numAttributes) {
-        attributes[object * numAttributes + att] =
+    for (int att = 0; att < numFeatures; att++) {
+      if (att + 1 == numFeatures) {
+        attributes[object * numFeatures + att] =
             std::stod(line.substr(pos, line.size()));
       } else {
-        attributes[object * numAttributes + att] =
+        attributes[object * numFeatures + att] =
             std::stod(line.substr(pos, line.find(',', pos) - pos));
         pos = line.find(',', pos) + 1;
       }
@@ -62,20 +136,47 @@ float *readDataset(std::ifstream &file, int numObjects, int numAttributes) {
 //===------------------------------------------------------------------------===
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
+  if (argc < 5) {
     std::cerr << "Invalid number of arguments!\n";
-    std::cerr << "Usage: " << argv[0] << " <input_file>\n";
+    std::cerr << "Usage: " << argv[0]
+              << " <num_clusters> <iterations> <threshold> <input_file>\n";
     return -1;
   }
 
-  std::ifstream file(argv[1]);
+  int numClusters = std::stoi(argv[1]);
+  if (numClusters <= 1) {
+    std::cerr << "The number of clusters must be greater or equal to 2!\n";
+    return -1;
+  }
+
+  int iterations = std::stoi(argv[2]);
+  if (iterations < 1) {
+    std::cerr << "The number of iterations at least 1!\n";
+    return -1;
+  }
+
+  float threshold = std::stod(argv[3]);
+
+  std::ifstream file(argv[4]);
   if (!file) {
     std::cerr << "Could not open file " << argv[1] << "\n";
     return -1;
   }
 
-  auto [numObjects, numAttributes] = readDatasetInfo(file);
-  float *data = readDataset(file, numObjects, numAttributes);
+  auto [numPoints, numFeatures] = readDatasetInfo(file);
+  float *features = readDataset(file, numPoints, numFeatures);
 
   srand(1);
+  float *centroids = kmeans_clustering(features, numFeatures, numPoints,
+                                       numClusters, iterations, threshold);
+
+  for (int i = 0; i < numClusters; i++) {
+    std::cout << i << ": ";
+    for (int j = 0; j < numFeatures; j++) {
+      std::cout << centroids[i * numFeatures + j]
+                << (j + 1 == numFeatures ? "\n" : ",");
+    }
+  }
+
+  return 0;
 }
