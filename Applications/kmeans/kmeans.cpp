@@ -49,6 +49,7 @@
 
 #include <cfloat>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <utility>
@@ -102,33 +103,40 @@ float *kmeans_clustering(float *features, int numFeatures, int numPoints,
 
   for (int i = 0; i < iterations; i++) {
     double delta = 0.0f;
+#pragma omp parallel shared(features, centroids, newCentroids, newCentroidsLen)
+    {
+#pragma omp for reduction(+ : delta)                                           \
+    reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
+      for (int j = 0; j < numPoints; j++) {
+        int index = find_nearest_point(centroids, numClusters, features, j,
+                                       numFeatures);
 
-    for (int j = 0; j < numPoints; j++) {
-      int index =
-          find_nearest_point(centroids, numClusters, features, j, numFeatures);
-
-      if (membership[j] != index) {
-        delta += 1.0;
-      }
-
-      membership[j] = index;
-
-      newCentroidsLen[index]++;
-      for (int k = 0; k < numFeatures; k++) {
-        newCentroids[index * numFeatures + k] += features[j * numFeatures + k];
-      }
-    }
-
-    for (int j = 0; j < numClusters; j++) {
-      for (int k = 0; k < numFeatures; k++) {
-        if (newCentroidsLen[j] > 0) {
-          centroids[j * numFeatures + k] =
-              newCentroids[j * numFeatures + k] / newCentroidsLen[j];
+        if (membership[j] != index) {
+          delta += 1.0;
         }
-        newCentroids[j * numFeatures + k] = 0.0f;
+
+        membership[j] = index;
+
+        newCentroidsLen[index]++;
+        for (int k = 0; k < numFeatures; k++) {
+          newCentroids[index * numFeatures + k] +=
+              features[j * numFeatures + k];
+        }
       }
-      newCentroidsLen[j] = 0;
+
+#pragma omp for collapse(2) schedule(static)
+      for (int j = 0; j < numClusters; j++) {
+        for (int k = 0; k < numFeatures; k++) {
+          if (newCentroidsLen[j] > 0) {
+            centroids[j * numFeatures + k] =
+                newCentroids[j * numFeatures + k] / newCentroidsLen[j];
+          }
+        }
+      }
     }
+
+    std::memset(newCentroids, 0, numClusters * numFeatures * sizeof(float));
+    std::memset(newCentroidsLen, 0, numClusters * sizeof(int));
 
     if (delta <= threshold) {
       break;
