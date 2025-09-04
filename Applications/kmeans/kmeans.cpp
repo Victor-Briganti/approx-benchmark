@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
 
   std::ifstream file(argv[4]);
   if (!file) {
-    std::cerr << "Could not open file " << argv[1] << "\n";
+    std::cerr << "Could not open file " << argv[4] << "\n";
     return -1;
   }
 
