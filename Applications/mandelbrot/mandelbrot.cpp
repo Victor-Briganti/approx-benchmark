@@ -111,7 +111,7 @@ inline bool mandelbrot(const Complex &c) {
 int main(int argc, char **argv) {
   if (argc < 2) {
     std::cerr << "Invalid number of arguments!\n";
-    std::cerr << "Usage: " << argv[0] << " <image_size>";
+    std::cerr << "Usage: " << argv[0] << " <image_size>\n";
     return -1;
   }
 
