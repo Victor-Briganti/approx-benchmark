@@ -47,6 +47,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <signal.h>
+#include <unistd.h>
 #include <vector>
 
 // This is the limit that pixels will need to exceed in order to escape from the
@@ -114,6 +116,8 @@ int main(int argc, char **argv) {
     std::cerr << "Usage: " << argv[0] << " <image_size>\n";
     return -1;
   }
+
+  kill(getpid(), SIGSTOP);
 
   // Get the size of the image as a multiple of 8
   size_t imageSize = (atol(argv[1]) + 7) / 8 * 8;

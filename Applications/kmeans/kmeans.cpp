@@ -52,6 +52,8 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <signal.h>
+#include <unistd.h>
 #include <utility>
 
 //===------------------------------------------------------------------------===
@@ -199,6 +201,8 @@ int main(int argc, char **argv) {
               << " <num_clusters> <iterations> <threshold> <input_file>\n";
     return -1;
   }
+
+  kill(getpid(), SIGSTOP);
 
   int numClusters = std::stoi(argv[1]);
   if (numClusters <= 1) {

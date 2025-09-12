@@ -66,6 +66,8 @@
 //===----------------------------------------------------------------------===//
 
 #include <iostream>
+#include <signal.h>
+#include <unistd.h>
 
 //===------------------------------------------------------------------------===
 // Helper Functions
@@ -130,6 +132,8 @@ int main(int argc, char **argv) {
     std::cerr << "Usage: " << argv[0] << " <matrix_size> <number_steps>\n";
     return -1;
   }
+
+  kill(getpid(), SIGSTOP);
 
   size_t size = atoi(argv[1]);
   int steps = atoi(argv[2]);

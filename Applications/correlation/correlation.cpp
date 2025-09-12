@@ -77,7 +77,9 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <signal.h>
 #include <string>
+#include <unistd.h>
 
 //===------------------------------------------------------------------------===
 // Correlation
@@ -179,6 +181,8 @@ int main(int argc, char **argv) {
     std::cerr << "Usage: " << argv[0] << " <input_file>\n";
     return -1;
   }
+
+  kill(getpid(), SIGSTOP);
 
   std::ifstream file(argv[1]);
   if (!file) {

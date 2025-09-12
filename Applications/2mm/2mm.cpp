@@ -64,6 +64,8 @@
 
 #include <cstdint>
 #include <iostream>
+#include <signal.h>
+#include <unistd.h>
 
 //===------------------------------------------------------------------------===
 // Helper Functions
@@ -100,6 +102,8 @@ int main(int argc, char **argv) {
     std::cerr << "Usage: " << argv[0] << " <matrix_size>\n";
     return -1;
   }
+
+  kill(getpid(), SIGSTOP);
 
   size_t matrixSize = atol(argv[1]);
 

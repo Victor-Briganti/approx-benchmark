@@ -42,7 +42,9 @@
 #include <cstdint>
 #include <iostream>
 #include <omp.h>
+#include <signal.h>
 #include <string>
+#include <unistd.h>
 
 struct RandState {
   uint64_t seed[2];
@@ -98,6 +100,8 @@ int main(int argc, char **argv) {
     std::cerr << "Usage: " << argv[0] << " <num_iterations>\n";
     return -1;
   }
+
+  kill(getpid(), SIGSTOP);
 
   uint64_t numIterations = std::stoul(argv[1]);
   std::cout << piMonteCarlo(numIterations);

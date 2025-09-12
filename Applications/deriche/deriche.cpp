@@ -66,13 +66,15 @@
 //===----------------------------------------------------------------------===//
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image.h"
 #include "stb_image_write.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
+#include <signal.h>
+#include <unistd.h>
 
 //===------------------------------------------------------------------------===
 // Helper Functions
@@ -214,6 +216,8 @@ int main(int argc, char **argv) {
               << " <alpha> <input_image> <output_image>\n";
     return -1;
   }
+
+  kill(getpid(), SIGSTOP);
 
   int width, height, channels;
   uint8_t *image = stbi_load(argv[2], &width, &height, &channels, 0);
