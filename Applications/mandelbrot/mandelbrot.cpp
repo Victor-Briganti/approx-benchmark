@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
     size_t byteRow = imageSize / 8;
     size_t pixelColumn = pixel % byteRow;
 
-    double y = pixel / byteRow;
+    double y = static_cast<double>(pixel) / byteRow;
 
 #pragma unroll(8)
     for (int bit = 0; bit < 8; bit++) {
