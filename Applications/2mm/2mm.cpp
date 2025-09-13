@@ -83,7 +83,7 @@ void init_matrix(uint64_t *&matrix, size_t size, bool fill = false) {
   matrix = new uint64_t[size * size];
 
   if (fill) {
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2) num_threads(NUM_THREADS)
     for (size_t y = 0; y < size; y++) {
       for (size_t x = 0; x < size; x++) {
         matrix[y * size + x] = x + y;
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
   init_matrix(D, matrixSize, true);
   init_matrix(E, matrixSize);
 
-#pragma omp parallel shared(A, B, C, D)
+#pragma omp parallel shared(A, B, C, D) num_threads(NUM_THREADS)
   {
 #pragma omp for collapse(2) schedule(static)
     for (size_t i = 0; i < matrixSize; ++i) {

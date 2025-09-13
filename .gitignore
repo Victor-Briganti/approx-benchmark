@@ -1,3 +1,5 @@
 *.a
 .vscode/
 .env/
+Output/
+Performance/
