@@ -20,11 +20,11 @@ threads=(1 2 4 8)
 applications=(2mm)
 
 run_2mm () {
-    $app_bin 1024 > $output_path &
+    $app_bin 4096 > $output_path &
 }
 
 run_perf () {
-    perf stat -t $pid -o $performance_path &
+    perf stat -e cycles,instructions -t $pid -o $performance_path &
 }
 
 # Base test to verify cycle variation
