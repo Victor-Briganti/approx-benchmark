@@ -19,5 +19,21 @@ for app in "${applications[@]}"; do
     mkdir -p Performance/$app/common
     mkdir -p Performance/$app/omp
     mkdir -p Performance/$app/approx
+
+    if [ $app = "2mm" ]; then
+        mkdir -p Evaluation/$app/base
+    fi
+
+    mkdir -p Evaluation/$app/common
+    mkdir -p Evaluation/$app/omp
+    mkdir -p Evaluation/$app/approx
+    
+    if [ $app = "2mm" ]; then
+        mkdir -p Reports/$app/base
+    fi
+    
+    mkdir -p Reports/$app/common
+    mkdir -p Reports/$app/omp
+    mkdir -p Reports/$app/approx
 done
 
