@@ -1,7 +1,6 @@
 #!/bin/bash
 
-applications=(2mm correlation deriche jacobi-2d kmeans mandelbrot pi)
-threads=(1 2 4 8 12 16)
+applications=(2mm correlation deriche jacobi2d kmeans mandelbrot pi)
 
 # Create the directory for the outputs and the performance for each application
 # Directory with the outputs of the applications

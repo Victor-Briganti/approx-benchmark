@@ -8,7 +8,7 @@ common:
 	$(CXX) $(CFLAGS) correlation.cpp -o correlation.a 
 
 omp:
-	$(CXX) $(CFLAGS) -fopenmp -DNUM_THREADS=$(NUM_THREADS) correlation.cpp -o correlation.a 
+	$(CXX) $(CFLAGS) -fopenmp -DNUM_THREADS=$(NUM_THREADS) correlation.cpp -o correlation_omp.a 
 
 csv:
 	python generate_csv.py
