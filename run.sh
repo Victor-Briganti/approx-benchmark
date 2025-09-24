@@ -50,6 +50,10 @@ run_perf () {
     perf stat -e cycles,instructions -t $pid -o $performance_path &
 }
 
+# Generate the input files
+python $APPLICATION_PATH/correlation/generate_csv.py
+unzip $APPLICATION_PATH/kmeans/input/kdd_cup.csv.zip -d $APPLICATION_PATH/kmeans/input/
+
 # Common execution
 for app in "${applications[@]}"; do
     # Compile the application
