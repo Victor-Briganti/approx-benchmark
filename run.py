@@ -12,10 +12,10 @@ APPLICATIONS: list[str] = [
     "pi",
 ]
 
-APPLICATION_DIR: str = "Applications"  # src of the apps
-OUTPUT_DIR: str = "Output"  # outputs of the running apps
-PERFORMANCE_DIR: str = "Performance"  # perf metrics of the running apps
-REPORT_DIR: str = "Report"  # graphs and analytics
+APPLICATION_DIR: str = "applications"  # src of the apps
+OUTPUT_DIR: str = "output"  # outputs of the running apps
+PERFORMANCE_DIR: str = "performance"  # perf metrics of the running apps
+REPORT_DIR: str = "report"  # graphs and analytics
 
 NUM_EXEC: int = 10
 THREADS: list[int] = [1, 2, 4, 8]
