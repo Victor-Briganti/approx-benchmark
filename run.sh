@@ -8,18 +8,19 @@ OUTPUT_PATH=Output
 PERFORMANCE_PATH=Performance
 
 # Number of executions
-NUM_EXEC=1
+NUM_EXEC=9
 
 # Number of executions to measure variation
-NUM_VAR_EXEC=10
+NUM_VAR_EXEC=9
 
 # Number of threads for execution
 threads=(1 2 4 8)
 
-applications=(2mm correlation deriche jacobi2d kmeans mandelbrot pi)
+#applications=(2mm correlation deriche jacobi2d kmeans mandelbrot pi)
+applications=(2mm)
 
 run_2mm () {
-    $app_bin 512 > $output_path &
+    $app_bin 4096 > $output_path &
 }
 
 run_correlation () {
@@ -51,7 +52,7 @@ run_perf () {
 }
 
 # Generate the input files
-python $APPLICATION_PATH/correlation/generate_csv.py
+python3 $APPLICATION_PATH/correlation/generate_csv.py
 unzip $APPLICATION_PATH/kmeans/input/kdd_cup.csv.zip -d $APPLICATION_PATH/kmeans/input/
 
 # Common execution
@@ -62,7 +63,7 @@ for app in "${applications[@]}"; do
     # Mount the binary path
     app_bin=$APPLICATION_PATH/$app/$app.a
 
-    for i in $(seq 1 $NUM_EXEC); do
+    for i in $(seq 0 $NUM_EXEC); do
         # Build the paths that are going to be used
         output_path=$OUTPUT_PATH/$app/common/$app\_$i.csv
         performance_path=$PERFORMANCE_PATH/$app/common/$app\_$i
@@ -134,7 +135,7 @@ for thread in "${threads[@]}"; do
         # Mount the binary path
         app_bin=$APPLICATION_PATH/$app/$app\_omp.a
 
-        for i in $(seq 1 $NUM_EXEC); do
+        for i in $(seq 0 $NUM_EXEC); do
             # Build the paths that are going to be used
             output_path=$OUTPUT_PATH/$app/omp/$app$thread\_$i.csv
             performance_path=$PERFORMANCE_PATH/$app/omp/$app$thread\_$i
