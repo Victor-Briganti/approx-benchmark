@@ -1,5 +1,5 @@
 CXX := clang++
-CFLAGS := -Wall -Wextra
+CFLAGS := -Wall -Wextra -g3 -O3
 NUM_THREADS ?= $(shell nproc)
 
 all: common

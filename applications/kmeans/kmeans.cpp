@@ -52,7 +52,6 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <signal.h>
 #include <unistd.h>
 #include <utility>
 

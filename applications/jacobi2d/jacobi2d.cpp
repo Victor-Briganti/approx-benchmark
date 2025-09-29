@@ -66,7 +66,6 @@
 //===----------------------------------------------------------------------===//
 
 #include <iostream>
-#include <signal.h>
 #include <unistd.h>
 
 //===------------------------------------------------------------------------===
@@ -84,7 +83,6 @@ void output_matrix(double *&matrix, size_t size) {
 double *init_matrix(size_t size, int offset) {
   double *matrix = new double[size * size];
 
-#pragma omp parallel for collapse(2) schedule(static)
   for (size_t i = 0; i < size; i++) {
     for (size_t j = 0; j < size; j++) {
       matrix[i * size + j] =
