@@ -133,8 +133,6 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  kill(getpid(), SIGSTOP);
-
   size_t size = atoi(argv[1]);
   int steps = atoi(argv[2]);
 

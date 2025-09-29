@@ -117,8 +117,6 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  kill(getpid(), SIGSTOP);
-
   // Get the size of the image as a multiple of 8
   size_t imageSize = (atol(argv[1]) + 7) / 8 * 8;
   std::vector<uint8_t> pixels(imageSize * imageSize / 8, 0x00);

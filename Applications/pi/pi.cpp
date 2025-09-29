@@ -101,8 +101,6 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  kill(getpid(), SIGSTOP);
-
   uint64_t numIterations = std::stoul(argv[1]);
   std::cout << piMonteCarlo(numIterations);
 

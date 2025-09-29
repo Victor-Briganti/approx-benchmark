@@ -103,8 +103,6 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  kill(getpid(), SIGSTOP);
-
   size_t matrixSize = atol(argv[1]);
 
   uint64_t *A = nullptr;

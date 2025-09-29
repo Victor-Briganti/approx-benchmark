@@ -182,8 +182,6 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  kill(getpid(), SIGSTOP);
-
   std::ifstream file(argv[1]);
   if (!file) {
     std::cerr << "Could not open file " << argv[1] << "\n";

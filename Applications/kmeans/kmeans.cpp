@@ -202,8 +202,6 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  kill(getpid(), SIGSTOP);
-
   int numClusters = std::stoi(argv[1]);
   if (numClusters <= 1) {
     std::cerr << "The number of clusters must be greater or equal to 2!\n";

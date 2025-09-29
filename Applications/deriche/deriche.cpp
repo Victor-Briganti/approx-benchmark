@@ -217,8 +217,6 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  kill(getpid(), SIGSTOP);
-
   int width, height, channels;
   uint8_t *image = stbi_load(argv[2], &width, &height, &channels, 0);
   if (!image) {
