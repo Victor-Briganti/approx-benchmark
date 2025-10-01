@@ -10,11 +10,11 @@ VALUES ('2mm', 0, 'Multiply two matrixes with this result multiply with another 
 	   ('mandelbrot', 0, 'Calculates the mandelbrot set and ouputs it as a 1-bit P4 portable bitmap image.', false),
 	   ('pi', 0, 'Calculates the PI number based on the Monte Carlo distribution.', false);
 
-INSERT INTO input("benchmark_id", "version", "binary", "metadata")
-VALUES (1, 0, false, '{ "matrix_size": 4096 }'),
-	   (2, 0, false, '{ "csv_file":  "./applications/correlation/input/input.csv" }'),
-	   (3, 0, true, '{ "alpha": 1, "input_image": "./applications/deriche/input/sunflower.jpg", "output_image": "./applications/deriche/output/output.jpg" }'),
-	   (4, 0, false, '{ "matrix_size": 2048, "number_steps": 2 }'),
-	   (5, 0, false, '{ "num_clusters": 5, "iteration": 10, "threshold": 2, "input_file": "./applications/kmeans/input/kdd_cup.csv" }'),
-	   (6, 0, false, '{ "image_size": 1024 }'),
-	   (7, 0, false, '{ "num_iterations": 100000 }');
+INSERT INTO input("benchmark_id", "version", "arguments")
+VALUES (1, 0, '{ "matrix_size": 4096 }'),
+	   (2, 0, '{ "csv_file":  "./applications/correlation/input/input.csv" }'),
+	   (3, 0, '{ "alpha": 1, "input_image": "./applications/deriche/input/sunflower.jpg", "output_image": "./applications/deriche/output/output.jpg" }'),
+	   (4, 0, '{ "matrix_size": 2048, "number_steps": 2 }'),
+	   (5, 0, '{ "num_clusters": 5, "iteration": 10, "threshold": 2, "input_file": "./applications/kmeans/input/kdd_cup.csv" }'),
+	   (6, 0, '{ "image_size": 1024 }'),
+	   (7, 0, '{ "num_iterations": 100000 }');

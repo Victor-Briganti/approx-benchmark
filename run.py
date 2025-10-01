@@ -1,48 +1,59 @@
-import duckdb
-from zipfile import ZipFile
+from io import StringIO
+import json
 import os
-import random as rand
+import errno
+import duckdb
+import subprocess as subproc
+from zipfile import ZipFile
 import pandas as pd
-import numpy as np
 
-DATABASE = duckdb.connect("database.db", read_only=False)
+################################################################################
+# Config
+################################################################################
 
-APPLICATION_DIR: str = "applications"  # src of the apps
-OUTPUT_DIR: str = "output"  # outputs of the running apps
-PERFORMANCE_DIR: str = "performance"  # perf metrics of the running apps
-REPORT_DIR: str = "report"  # graphs and analytics
+APPLICATION_DIR = "applications"
+OUTPUT_DIR = "output"
+PERFORMANCE_DIR = "performance"
+REPORT_DIR = "report"
 
-NUM_EXEC: int = 10
-THREADS: list[int] = [1, 2, 4, 8]
+NUM_EXEC = 10
+THREADS = [1, 2, 4, 8]
+APPLICATION_TYPE = ["common", "omp", "approx"]
 
-def create_dir(applications):
-    # Create the default directories for all applications
-    for app in applications['name']:
-        for dir in [APPLICATION_DIR, REPORT_DIR]:
-            if dir == APPLICATION_DIR:
-                if not os.path.exists(f"{dir}/{app}/{OUTPUT_DIR}"):
-                    os.makedirs(f"{dir}/{app}/{OUTPUT_DIR}")
-                    
-                if not os.path.exists(f"{dir}/{app}/{PERFORMANCE_DIR}"):
-                    os.makedirs(f"{dir}/{app}/{PERFORMANCE_DIR}")
+HARDWARE_ID = 1
+DATABASE_PATH = "database.db"
 
-            elif dir == REPORT_DIR:
-                if not os.path.exists(f"{dir}/{app}"):
-                    os.makedirs(f"{dir}/{app}/common")
-                    os.makedirs(f"{dir}/{app}/omp")
-                    os.makedirs(f"{dir}/{app}/approx")
-
-                if app == "2mm" and not os.path.exists(f"{dir}/{app}/base"):
-                    os.makedirs(f"{dir}/{app}/base")
+################################################################################
+# Database
+################################################################################
 
 
-def unzip_file(input_path: str, output_path: str):
-    with ZipFile(input_path, "r") as zip:
-        zip.extractall(output_path)
+def get_database_connection():
+    return duckdb.connect(DATABASE_PATH, read_only=False)
 
 
-def setup(applications):
-    create_dir(applications)
+################################################################################
+# Filesystem Setup
+################################################################################
+
+
+def create_application_dirs(app_name: str):
+    performance_path = os.path.join(APPLICATION_DIR, app_name, PERFORMANCE_DIR)
+    report_paths = [os.path.join(REPORT_DIR, app_name, t) for t in APPLICATION_TYPE]
+
+    for path in [performance_path, *report_paths]:
+        os.makedirs(path, exist_ok=True)
+
+
+def unzip_file(zip_path: str, extract_to: str):
+    with ZipFile(zip_path, "r") as zip_file:
+        zip_file.extractall(extract_to)
+
+
+def setup_environment(applications: pd.DataFrame):
+    for app in applications["name"]:
+        create_application_dirs(app)
+
     unzip_file(
         f"{APPLICATION_DIR}/correlation/input/input.zip",
         f"{APPLICATION_DIR}/correlation/input/",
@@ -53,9 +64,232 @@ def setup(applications):
     )
 
 
-if __name__ == "__main__":
-    applications = DATABASE.execute("""
-        SELECT DISTINCT name FROM benchmark WHERE canceled = false;
-    """).df()
+################################################################################
+# Compilation & Execution
+################################################################################
+
+
+def run_make(app: str, args: str | None = None):
+    cmd = ["make", "-C", os.path.join(APPLICATION_DIR, app)]
+    if args:
+        cmd.append(args)
+
+    result = subproc.run(cmd)
+    if result.returncode != 0:
+        print(f"[ERROR] Failed to compile {app}")
+        exit(1)
+
+
+def insert_run_entry(
+    conn,
+    bench_id: int,
+    thread: int,
+    run_type: str,
+    exec_num: int,
+    approx_tech: str | None = None,
+    approx_level: float | None = None,
+):
+    conn.execute(
+        """
+        INSERT INTO run(
+            benchmark_id, hardware_id, thread, type,
+            execution_num, approx_technique, approx_level,
+            start_time
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, current_localtimestamp());
+        """,
+        (bench_id, HARDWARE_ID, thread, run_type, exec_num, approx_tech, approx_level),
+    )
+    run_id = conn.execute("SELECT max(id) FROM run").fetchone()[0]
+    return run_id
+
+
+def update_run_end_time(conn, run_id: int):
+    conn.execute(
+        "UPDATE run SET end_time = current_localtimestamp() WHERE id = ?;", (run_id,)
+    )
+
+
+def log_run_error(conn, run_id: int, returncode: int, stderr: str):
+    conn.execute(
+        """
+        INSERT INTO run_error(run_id, error_num, error_code, error_string)
+        VALUES (?, ?, ?, ?);
+        """,
+        (
+            run_id,
+            returncode,
+            errno.errorcode.get(returncode, "UNKNOWN"),
+            stderr,
+        ),
+    )
+
+
+def application_input_arguments(conn, benchmark_id: int):
+    args = conn.execute(
+        """
+        SELECT arguments FROM input WHERE benchmark_id = ?;
+        """,
+        (benchmark_id,),
+    ).fetchone()
+
+    return json.loads(args[0])
+
+
+def run_perf(
+    app: str,
+    args: list[str],
+    run_id: int,
+):
+    output_path = os.path.join(
+        APPLICATION_DIR, app, PERFORMANCE_DIR, f"perf_{run_id}.txt"
+    )
+    cmd = ["perf", "stat", "-o", output_path]
+    cmd += args
+
+    result = subproc.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"[ERROR] Benchmark {app} failed.")
+
+    return (result, output_path)
+
+
+################################################################################
+# Database Insert
+################################################################################
+
+
+def save_performance_stat(conn, run_id, metric_name, metric_value):
+    _ = conn.execute(
+        """
+            INSERT INTO performance_stat(run_id, metric_name, metric_value)
+            VALUES (?, ?, ?)
+            """,
+        (run_id, metric_name, metric_value),
+    )
+
+
+def save_performance(conn, run_id: int, perf_path: str):
+    with open(f"{perf_path}", "r") as file:
+        task_clock: float = 0
+        context_switches: float = 0
+        cpu_migrations: float = 0
+        page_faults: float = 0
+        instructions: float = 0
+        cycles: float = 0
+        branches: float = 0
+        branch_misses: float = 0
+        real_time: float = 0
+        user_time: float = 0
+        sys_time: float = 0
+
+        for idx, line in enumerate(file, 1):
+            if idx == 6:
+                data = line.strip().split()
+                task_clock = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "task_clock", task_clock)
+            elif idx == 7:
+                data = line.strip().split()
+                context_switches = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "context_switches", context_switches)
+            elif idx == 8:
+                data = line.strip().split()
+                cpu_migrations = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "cpu_migrations", cpu_migrations)
+            elif idx == 9:
+                data = line.strip().split()
+                page_faults = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "page_faults", page_faults)
+            elif idx == 10:
+                data = line.strip().split()
+                instructions = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "instructions", instructions)
+            elif idx == 12:
+                data = line.strip().split()
+                cycles = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "cycles", cycles)
+            elif idx == 13:
+                data = line.strip().split()
+                stalled_cycles_frontend = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "stalled_cycles_frontend", stalled_cycles_frontend)
+            elif idx == 14:
+                data = line.strip().split()
+                branches = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "branches", branches)
+            elif idx == 15:
+                data = line.strip().split()
+                branch_misses = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "branch_misses", branch_misses)
+            elif idx == 17:
+                data = line.strip().split()
+                real_time = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "real_time", real_time)
+            elif idx == 19:
+                data = line.strip().split()
+                user_time = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "user_time", user_time)
+            elif idx == 20:
+                data = line.strip().split()
+                sys_time = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "sys_time", sys_time)
+
+
+def save_matrix_output(conn, run_id: int, input: str):
+    df = pd.read_csv(StringIO(input), header=None)
+
+    melted = (
+        df.reset_index()
+        .melt(id_vars="index", var_name="col_num", value_name="value")
+        .rename(columns={"index": "row_num"})
+    )
+    melted["run_id"] = run_id
+    melted = melted[["run_id", "row_num", "col_num", "value"]]
+
+    conn.execute("INSERT INTO matrix_output SELECT * FROM melted")
+
+
+################################################################################
+# Applications
+################################################################################
+
+
+def run_2mm(conn, app_id: int, run_id: int):
+    arguments = application_input_arguments(conn, app_id)
+
+    app_path = os.path.join(APPLICATION_DIR, "2mm")
+    cmd = [f"{app_path}/2mm.a", f"{arguments['matrix_size']}"]
+
+    return run_perf("2mm", cmd, run_id)
+
+
+def run(applications: pd.DataFrame):
+    with get_database_connection() as conn:
+        run_id = -1
+        for app_id, app in zip(applications["id"], applications["name"]):
+            if app == "2mm":
+                for exec_idx in range(0, 10):
+                    run_id = insert_run_entry(conn, app_id, 1, APPLICATION_TYPE[0], exec_idx)
+                    print(f"[INFO] {app}: run_id({run_id}) thread(1) type(common) exec_num({exec_idx})")
+                    (result, perf_path) = run_2mm(conn, app_id, run_id)
+                    update_run_end_time(conn, run_id)
     
-    setup(applications)
+                    if result.returncode != 0:
+                        log_run_error(conn, run_id, result.returncode, result.stderr)
+                        exit(-1)
+    
+                    save_matrix_output(conn, run_id, result.stdout)
+                    save_performance(conn, run_id, perf_path)
+
+
+################################################################################
+# Main
+################################################################################
+
+if __name__ == "__main__":
+    with get_database_connection() as conn:
+        applications = conn.execute(
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false;"
+        ).df()
+
+    # setup_environment(applications)  # Uncomment if needed
+    run(applications)
