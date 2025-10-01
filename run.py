@@ -38,10 +38,11 @@ def get_database_connection():
 
 
 def create_application_dirs(app_name: str):
+    output_path = os.path.join(APPLICATION_DIR, app_name, OUTPUT_DIR)
     performance_path = os.path.join(APPLICATION_DIR, app_name, PERFORMANCE_DIR)
     report_paths = [os.path.join(REPORT_DIR, app_name, t) for t in APPLICATION_TYPE]
 
-    for path in [performance_path, *report_paths]:
+    for path in [output_path, performance_path, *report_paths]:
         os.makedirs(path, exist_ok=True)
 
 
@@ -230,18 +231,11 @@ def save_performance(conn, run_id: int, perf_path: str):
                 save_performance_stat(conn, run_id, "sys_time", sys_time)
 
 
-def save_matrix_output(conn, run_id: int, input: str):
+def save_2mm_output(run_id: int, exec_id: int, input: str):
+    output_path = os.path.join(APPLICATION_DIR, "2mm", OUTPUT_DIR)
     df = pd.read_csv(StringIO(input), header=None)
-
-    melted = (
-        df.reset_index()
-        .melt(id_vars="index", var_name="col_num", value_name="value")
-        .rename(columns={"index": "row_num"})
-    )
-    melted["run_id"] = run_id
-    melted = melted[["run_id", "row_num", "col_num", "value"]]
-
-    conn.execute("INSERT INTO matrix_output SELECT * FROM melted")
+    df.columns = [f"col_{idx}" for idx in range(df.shape[1])]
+    df.to_parquet(f"{output_path}/2mm_{run_id}_{exec_id}.parquet", index=False)
 
 
 ################################################################################
@@ -250,7 +244,7 @@ def save_matrix_output(conn, run_id: int, input: str):
 
 
 def run_2mm(conn, app_id: int, run_id: int):
-    run_make("2mm")
+    # run_make("2mm")
     arguments = application_input_arguments(conn, app_id)
 
     app_path = os.path.join(APPLICATION_DIR, "2mm")
@@ -264,7 +258,7 @@ def run(applications: pd.DataFrame):
         run_id = -1
         for app_id, app in zip(applications["id"], applications["name"]):
             if app == "2mm":
-                for exec_idx in range(0, 10):
+                for exec_idx in range(0, 1):
                     run_id = insert_run_entry(conn, app_id, 1, APPLICATION_TYPE[0], exec_idx)
                     print(f"[INFO] {app}: run_id({run_id}) thread(1) type(common) exec_num({exec_idx})")
                     (result, perf_path) = run_2mm(conn, app_id, run_id)
@@ -274,7 +268,7 @@ def run(applications: pd.DataFrame):
                         log_run_error(conn, run_id, result.returncode, result.stderr)
                         exit(-1)
     
-                    save_matrix_output(conn, run_id, result.stdout)
+                    save_2mm_output(run_id, exec_idx, result.stdout)
                     save_performance(conn, run_id, perf_path)
 
 

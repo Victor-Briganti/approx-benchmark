@@ -3,6 +3,7 @@
 *.a
 *.db
 *.db.wal
+*.parquet
 perf_*.txt
 Output/
 Performance/

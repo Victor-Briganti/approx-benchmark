@@ -50,31 +50,6 @@ CREATE TABLE IF NOT EXISTS "run" (
 	"end_time" TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS "matrix_output" (
-	"run_id" BIGINT REFERENCES "run"("id"),
-	"col_num" BIGINT NOT NULL,
-	"row_num" BIGINT NOT NULL,
-	"value" DOUBLE NOT NULL,
-	PRIMARY KEY ("run_id", "col_num", "row_num")
-);
-
-CREATE TABLE IF NOT EXISTS "image_output" (	
-	"run_id" BIGINT PRIMARY KEY REFERENCES "run"("id"),
-	"image" BLOB NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "single_output" (
-	"run_id" BIGINT PRIMARY KEY REFERENCES "run"("id"),
-	"value" DOUBLE NOT NULL 
-);
-
-CREATE TABLE IF NOT EXISTS "cluster_output" (
-	"run_id" BIGINT PRIMARY KEY REFERENCES "run"("id"),
-	"cluster" BIGINT NOT NULL,
-	"feature_num" BIGINT NOT NULL,
-	"value" DOUBLE NOT NULL,
-);
-
 CREATE TABLE IF NOT EXISTS "performance_stat" (
 	"run_id" BIGINT REFERENCES "run"("id"),
 	"metric_name" VARCHAR,
