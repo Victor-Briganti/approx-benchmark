@@ -258,7 +258,7 @@ def run(applications: pd.DataFrame):
         run_id = -1
         for app_id, app in zip(applications["id"], applications["name"]):
             if app == "2mm":
-                for exec_idx in range(0, 1):
+                for exec_idx in range(0, 10):
                     run_id = insert_run_entry(conn, app_id, 1, APPLICATION_TYPE[0], exec_idx)
                     print(f"[INFO] {app}: run_id({run_id}) thread(1) type(common) exec_num({exec_idx})")
                     (result, perf_path) = run_2mm(conn, app_id, run_id)
