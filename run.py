@@ -254,6 +254,7 @@ def save_matrix_output(conn, run_id: int, input: str):
 
 
 def run_2mm(conn, app_id: int, run_id: int):
+    run_make("2mm")
     arguments = application_input_arguments(conn, app_id)
 
     app_path = os.path.join(APPLICATION_DIR, "2mm")
@@ -291,5 +292,5 @@ if __name__ == "__main__":
             "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false;"
         ).df()
 
-    # setup_environment(applications)  # Uncomment if needed
+    setup_environment(applications)
     run(applications)

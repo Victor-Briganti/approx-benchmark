@@ -17,8 +17,7 @@ CREATE SEQUENCE IF NOT EXISTS "benchmark_sequence" START 1;
 CREATE TABLE IF NOT EXISTS "benchmark" (
 	"id" BIGINT PRIMARY KEY DEFAULT nextval('benchmark_sequence'),
 	"name" VARCHAR NOT NULL,
-	"version" VARCHAR NOT NULL,
-	"created_at" TIMESTAMP NOT NULL DEFAULT current_localtimestamp(),
+	"version" BIGINT NOT NULL,
 	"description" VARCHAR,
 	"canceled" BOOLEAN NOT NULL DEFAULT false
 );
