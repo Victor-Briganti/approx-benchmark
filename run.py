@@ -175,8 +175,8 @@ def save_performance(conn, run_id: int, perf_path: str):
         context_switches: float = 0
         cpu_migrations: float = 0
         page_faults: float = 0
-        instructions: float = 0
         cycles: float = 0
+        instructions: float = 0
         branches: float = 0
         branch_misses: float = 0
         real_time: float = 0
@@ -202,33 +202,29 @@ def save_performance(conn, run_id: int, perf_path: str):
                 save_performance_stat(conn, run_id, "page_faults", page_faults)
             elif idx == 10:
                 data = line.strip().split()
+                cycles = float(data[0].replace(",", ""))
+                save_performance_stat(conn, run_id, "cycles", cycles)
+            elif idx == 11:
+                data = line.strip().split()
                 instructions = float(data[0].replace(",", ""))
                 save_performance_stat(conn, run_id, "instructions", instructions)
             elif idx == 12:
                 data = line.strip().split()
-                cycles = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "cycles", cycles)
-            elif idx == 13:
-                data = line.strip().split()
-                stalled_cycles_frontend = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "stalled_cycles_frontend", stalled_cycles_frontend)
-            elif idx == 14:
-                data = line.strip().split()
                 branches = float(data[0].replace(",", ""))
                 save_performance_stat(conn, run_id, "branches", branches)
-            elif idx == 15:
+            elif idx == 13:
                 data = line.strip().split()
                 branch_misses = float(data[0].replace(",", ""))
                 save_performance_stat(conn, run_id, "branch_misses", branch_misses)
-            elif idx == 17:
+            elif idx == 15:
                 data = line.strip().split()
                 real_time = float(data[0].replace(",", ""))
                 save_performance_stat(conn, run_id, "real_time", real_time)
-            elif idx == 19:
+            elif idx == 17:
                 data = line.strip().split()
                 user_time = float(data[0].replace(",", ""))
                 save_performance_stat(conn, run_id, "user_time", user_time)
-            elif idx == 20:
+            elif idx == 18:
                 data = line.strip().split()
                 sys_time = float(data[0].replace(",", ""))
                 save_performance_stat(conn, run_id, "sys_time", sys_time)
