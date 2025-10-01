@@ -17,18 +17,19 @@ CREATE SEQUENCE IF NOT EXISTS "benchmark_sequence" START 1;
 CREATE TABLE IF NOT EXISTS "benchmark" (
 	"id" BIGINT PRIMARY KEY DEFAULT nextval('benchmark_sequence'),
 	"name" VARCHAR NOT NULL,
-	"version" BIGINT NOT NULL,
+	"version" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP NOT NULL DEFAULT current_localtimestamp(),
 	"description" VARCHAR,
 	"canceled" BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE SEQUENCE IF NOT EXISTS "input_sequence" START 1;
 CREATE TABLE IF NOT EXISTS "input" (
-	"id" BIGINT PRIMARY KEY DEFAULT nextval('input_sequence') REFERENCES "benchmark"("id"),
-	"benchmark_id" BIGINT NOT NULL,
+	"id" BIGINT PRIMARY KEY DEFAULT nextval('input_sequence') ,
+	"benchmark_id" BIGINT NOT NULL REFERENCES "benchmark"("id"),
 	"version" BIGINT NOT NULL,
 	"binary" BOOLEAN,
-	"metadata" JSON
+	"arguments" JSON
 );
 
 CREATE TABLE IF NOT EXISTS "input_binary" (
@@ -76,18 +77,10 @@ CREATE TABLE IF NOT EXISTS "cluster_output" (
 );
 
 CREATE TABLE IF NOT EXISTS "performance_stat" (
-	"run_id" BIGINT PRIMARY KEY REFERENCES "run"("id"),
-	"task_clock" DOUBLE NOT NULL,
-	"context_switches" BIGINT NOT NULL,
-	"cpu_migrations" BIGINT NOT NULL,
-	"page_faults" BIGINT NOT NULL,
-	"instructions" BIGINT NOT NULL,
-	"cycles" BIGINT NOT NULL,
-	"branches" BIGINT NOT NULL,
-	"branch_misses" BIGINT NOT NULL,
-	"real_time" DOUBLE NOT NULL,
-	"user_time" DOUBLE NOT NULL,
-	"sys_time" DOUBLE NOT NULL
+	"run_id" BIGINT REFERENCES "run"("id"),
+	"metric_name" VARCHAR,
+	"metric_value" DOUBLE NOT NULL,
+	PRIMARY KEY ("run_id", "metric_name")
 );
 
 CREATE TABLE IF NOT EXISTS "run_error" (
@@ -96,5 +89,3 @@ CREATE TABLE IF NOT EXISTS "run_error" (
 	"error_code" VARCHAR,
 	"error_string" VARCHAR
 );
-
-

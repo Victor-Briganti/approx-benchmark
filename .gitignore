@@ -1,8 +1,9 @@
-*.a
 .vscode/
 .env/
+*.a
+*.db
+*.db.wal
+perf_*.txt
 Output/
 Performance/
 Evaluation/
-*.db
-*.db.wal
