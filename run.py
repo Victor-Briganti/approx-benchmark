@@ -272,6 +272,14 @@ def save_correlation_output(run_id: int, exec_id: int, input: str):
     df.to_parquet(output_path, index=False)
 
 
+def save_jacobi2d_output(run_id: int, exec_id: int, input: str):
+    output_path = os.path.join(APPLICATION_DIR, "jacobi2d", OUTPUT_DIR)
+    output_path += f"/jacobi2d_{run_id}_common{exec_id}.parquet"
+    df = pd.read_csv(StringIO(input), header=None)
+    df.columns = [f"col_{idx}" for idx in range(df.shape[1])]
+    df.to_parquet(output_path, index=False)
+
+
 ################################################################################
 # Applications
 ################################################################################
@@ -335,6 +343,19 @@ def run_correlation(conn, app_id: int, run_id: int):
 
     return run_perf("correlation", cmd, run_id)
 
+def run_jacobi2d(conn, app_id: int, run_id: int):
+    run_make("jacobi2d")
+    arguments = application_input_arguments(conn, app_id)
+
+    app_path = os.path.join(APPLICATION_DIR, "jacobi2d")
+    cmd = [
+        f"{app_path}/jacobi2d.a",
+        f"{arguments['matrix_size']}",
+        f"{arguments['number_steps']}",
+    ]
+
+    return run_perf("jacobi2d", cmd, run_id)
+
 
 def run(applications: pd.DataFrame):
     benchmark_func = {
@@ -357,6 +378,10 @@ def run(applications: pd.DataFrame):
         "correlation": {
             "exec": run_correlation,
             "output": save_correlation_output,
+        },
+        "jacobi2d": {
+            "exec": run_jacobi2d,
+            "output": save_jacobi2d_output,
         },
     }
 
@@ -388,7 +413,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'correlation';"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'jacobi2d';"
         ).df()
 
     # setup_environment(applications)
