@@ -250,6 +250,20 @@ def save_mandelbrot_output(run_id: int, exec_id: int, input: str):
         _ = file.write(input)
 
 
+def save_kmeans_output(run_id: int, exec_id: int, input: str):
+    output_path = os.path.join(APPLICATION_DIR, "kmeans", OUTPUT_DIR)
+    output_path += f"/kmeans_{run_id}_common{exec_id}.csv"
+
+    df = pd.DataFrame()
+    for line in input.splitlines():
+        header = line[0 : line.find(":")]
+        line_df = pd.DataFrame(line[line.find(":") + 2 :].split(","))
+        line_df = line_df.map(lambda x: float(x))
+        df[f"cluster{header}"] = line_df
+
+    df.to_csv(output_path, index=False)
+
+
 ################################################################################
 # Applications
 ################################################################################
@@ -285,6 +299,22 @@ def run_mandelbrot(conn, app_id: int, run_id: int):
     return run_perf("mandelbrot", cmd, run_id, False)
 
 
+def run_kmeans(conn, app_id: int, run_id: int):
+    run_make("kmeans")
+    arguments = application_input_arguments(conn, app_id)
+
+    app_path = os.path.join(APPLICATION_DIR, "kmeans")
+    cmd = [
+        f"{app_path}/kmeans.a",
+        f"{arguments['num_clusters']}",
+        f"{arguments['iteration']}",
+        f"{arguments['threshold']}",
+        f"{arguments['input_file']}",
+    ]
+
+    return run_perf("kmeans", cmd, run_id)
+
+
 def run(applications: pd.DataFrame):
     benchmark_func = {
         "2mm": {
@@ -298,6 +328,10 @@ def run(applications: pd.DataFrame):
         "mandelbrot": {
             "exec": run_mandelbrot,
             "output": save_mandelbrot_output,
+        },
+        "kmeans": {
+            "exec": run_kmeans,
+            "output": save_kmeans_output,
         },
     }
 
@@ -319,7 +353,7 @@ def run(applications: pd.DataFrame):
                     exit(-1)
 
                 benchmark_func[app]["output"](run_id, exec_idx, result.stdout)
-                # save_performance(conn, run_id, perf_path)
+                save_performance(conn, run_id, perf_path)
 
 
 ################################################################################
@@ -329,7 +363,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'pi';"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'kmeans';"
         ).df()
 
     # setup_environment(applications)
