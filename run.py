@@ -13,6 +13,7 @@ import pandas as pd
 # Globals
 ################################################################################
 
+
 class ApplicationType(Enum):
     COMMON = "common"
     OMP = "omp"
@@ -238,11 +239,31 @@ def save_performance(conn, run_id: int, perf_path: str):
                 save_performance_stat(conn, run_id, "sys_time", sys_time)
 
 
-def save_2mm_output(run_id: int, exec_id: int, input: str):
+def save_2mm_output(
+    input: str,
+    run_id: int,
+    exec_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+):
     output_path = os.path.join(APPLICATION_DIR, "2mm", OUTPUT_DIR)
+
+    if type == ApplicationType.COMMON:
+        output_path += f"/2mm_id{run_id}_{type.value}_exec{exec_id}.parquet"
+    elif type == ApplicationType.OMP:
+        if thread is None:
+            print(
+                f"[ERROR] Failed to save the output of 2mm. Missing number of thread."
+            )
+            exit(-1)
+
+        output_path += (
+            f"/2mm_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.parquet"
+        )
+
     df = pd.read_csv(StringIO(input), header=None)
     df.columns = [f"col_{idx}" for idx in range(df.shape[1])]
-    df.to_parquet(f"{output_path}/2mm_{run_id}_common{exec_id}.parquet", index=False)
+    df.to_parquet(output_path, index=False)
 
 
 def save_pi_output(
@@ -316,8 +337,20 @@ def save_deriche_output(run_id: int, exec_id: int, input: str):
 ################################################################################
 
 
-def run_2mm(conn, app_id: int, run_id: int):
-    run_make("2mm")
+def run_2mm(
+    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+):
+    if type == ApplicationType.COMMON:
+        run_make("2mm")
+    elif type == ApplicationType.OMP:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile 2mm with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        run_make("2mm", ["omp", f"NUM_THREADS={thread}"])
+
     arguments = application_input_arguments(conn, app_id)
 
     app_path = os.path.join(APPLICATION_DIR, "2mm")
@@ -416,10 +449,10 @@ def run_deriche(conn, app_id: int, run_id: int):
 
 def run(applications: pd.DataFrame):
     benchmark_func = {
-        # "2mm": {
-        #     "exec": run_2mm,
-        #     "output": save_2mm_output,
-        # },
+        "2mm": {
+            "exec": run_2mm,
+            "output": save_2mm_output,
+        },
         "pi": {
             "exec": run_pi,
             "output": save_pi_output,
@@ -483,7 +516,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='pi';"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='mandelbrot';"
         ).df()
 
     # setup_environment(applications)
