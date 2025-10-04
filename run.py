@@ -280,6 +280,13 @@ def save_jacobi2d_output(run_id: int, exec_id: int, input: str):
     df.to_parquet(output_path, index=False)
 
 
+def save_deriche_output(run_id: int, exec_id: int, input: str):
+    base_path = os.path.join(APPLICATION_DIR, "deriche", OUTPUT_DIR)
+    current_image = base_path + "/output.jpg"
+    new_image = base_path + f"/deriche_{run_id}_common{exec_id}.jpg"
+    os.rename(current_image, new_image)
+
+
 ################################################################################
 # Applications
 ################################################################################
@@ -356,6 +363,20 @@ def run_jacobi2d(conn, app_id: int, run_id: int):
 
     return run_perf("jacobi2d", cmd, run_id)
 
+def run_deriche(conn, app_id: int, run_id: int):
+    run_make("deriche")
+    arguments = application_input_arguments(conn, app_id)
+
+    app_path = os.path.join(APPLICATION_DIR, "deriche")
+    cmd = [
+        f"{app_path}/deriche.a",
+        f"{arguments['alpha']}",
+        f"{arguments['input_image']}",
+        f"{arguments['output_image']}",
+    ]
+
+    return run_perf("deriche", cmd, run_id)
+
 
 def run(applications: pd.DataFrame):
     benchmark_func = {
@@ -382,6 +403,10 @@ def run(applications: pd.DataFrame):
         "jacobi2d": {
             "exec": run_jacobi2d,
             "output": save_jacobi2d_output,
+        },
+        "deriche": {
+            "exec": run_deriche,
+            "output": save_deriche_output,
         },
     }
 
@@ -413,7 +438,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'jacobi2d';"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'deriche';"
         ).df()
 
     # setup_environment(applications)
