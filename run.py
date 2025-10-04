@@ -79,10 +79,10 @@ def setup_environment(applications: pd.DataFrame):
 ################################################################################
 
 
-def run_make(app: str, args: str | None = None):
+def run_make(app: str, args: list[str] | None = None):
     cmd = ["make", "-C", os.path.join(APPLICATION_DIR, app)]
     if args:
-        cmd.append(args)
+        cmd += args
 
     result = subproc.run(cmd)
     if result.returncode != 0:
@@ -245,12 +245,18 @@ def save_2mm_output(run_id: int, exec_id: int, input: str):
     df.to_parquet(f"{output_path}/2mm_{run_id}_common{exec_id}.parquet", index=False)
 
 
-def save_pi_output(input: str, run_id: int, exec_id: int, type: ApplicationType, thread: int | None = None):
+def save_pi_output(
+    input: str,
+    run_id: int,
+    exec_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+):
     output_path = os.path.join(APPLICATION_DIR, "pi", OUTPUT_DIR)
-    
+
     if type == ApplicationType.COMMON:
         output_path += f"/pi_id{run_id}_{type.value}_exec{exec_id}.txt"
-    elif type == ApplicationType.OMP: 
+    elif type == ApplicationType.OMP:
         if thread is None:
             print(f"[ERROR] Failed to save the output of pi. Missing number of thread.")
             exit(-1)
@@ -320,7 +326,9 @@ def run_2mm(conn, app_id: int, run_id: int):
     return run_perf("2mm", cmd, run_id)
 
 
-def run_pi(conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None):
+def run_pi(
+    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+):
     if type == ApplicationType.COMMON:
         run_make("pi")
     elif type == ApplicationType.OMP:
@@ -328,8 +336,8 @@ def run_pi(conn, app_id: int, run_id: int, type: ApplicationType, thread: int | 
             print(f"[ERROR] Failed to compile pi with OpenMP. Missing number of thread")
             exit(-1)
 
-        run_make("pi", f"NUM_THREADS={thread}")
-        
+        run_make("pi", ["omp", f"NUM_THREADS={thread}"])
+
     arguments = application_input_arguments(conn, app_id)
 
     app_path = os.path.join(APPLICATION_DIR, "pi")
@@ -440,30 +448,32 @@ def run(applications: pd.DataFrame):
 
     with get_database_connection() as conn:
         run_id = -1
-        for type in ApplicationType:
+        for type in [ApplicationType.OMP]:
             if type == ApplicationType.APPROX:
                 continue
 
-            for thread in ([None] if type == ApplicationType.COMMON else THREADS):
+            for thread in [None] if type == ApplicationType.COMMON else THREADS:
                 for app_id, app in zip(applications["id"], applications["name"]):
                     for exec_idx in range(0, 10):
-                        run_id = insert_run_entry(
-                            conn, app_id, 1, type.value, exec_idx
-                        )
+                        run_id = insert_run_entry(conn, app_id, 1, type.value, exec_idx)
                         print(
                             f"[INFO] {app}: run_id({run_id}) type({type.value}) thread({thread}) exec_num({exec_idx})"
                         )
-                        (result, perf_path) = benchmark_func[app]["exec"](conn, app_id, run_id, type, thread)
+                        (result, perf_path) = benchmark_func[app]["exec"](
+                            conn, app_id, run_id, type, thread
+                        )
 
                         update_run_end_time(conn, run_id)
                         if result.returncode != 0:
-                            log_run_error(conn, run_id, result.returncode, result.stderr)
+                            log_run_error(
+                                conn, run_id, result.returncode, result.stderr
+                            )
                             exit(-1)
 
-                        benchmark_func[app]["output"](result.stdout, run_id, exec_idx, type, thread)
+                        benchmark_func[app]["output"](
+                            result.stdout, run_id, exec_idx, type, thread
+                        )
                         # save_performance(conn, run_id, perf_path)
-            
-                    
 
 
 ################################################################################

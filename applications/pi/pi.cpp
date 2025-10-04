@@ -73,7 +73,7 @@ inline double randomDouble(RandState &state) {
 double piMonteCarlo(uint64_t numIterations) {
   uint64_t hit = 0;
 
-#pragma omp parallel reduction(+ : hit)
+#pragma omp parallel reduction(+ : hit) num_threads(NUM_THREADS)
   {
 #if _OPENMP
     uint64_t ompID = omp_get_thread_num();
