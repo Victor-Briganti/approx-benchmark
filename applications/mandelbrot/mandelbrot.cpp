@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
   double scaleX = (REAL_FINAL_RANGE - REAL_INIT_RANGE) / imageSize;
   double scaleY = (IMAG_FINAL_RANGE - IMAG_INIT_RANGE) / imageSize;
 
-#pragma omp parallel for shared(pixels)
+#pragma omp parallel for shared(pixels) num_threads(NUM_THREADS)
   for (int pixel = 0; pixel < pixels.size(); pixel++) {
     uint8_t byte = 0;
 

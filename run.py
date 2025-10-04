@@ -288,9 +288,24 @@ def save_pi_output(
         _ = file.write(input)
 
 
-def save_mandelbrot_output(run_id: int, exec_id: int, input: str):
+def save_mandelbrot_output(
+    input: str,
+    run_id: int,
+    exec_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+):
     output_path = os.path.join(APPLICATION_DIR, "mandelbrot", OUTPUT_DIR)
-    output_path += f"/mandelbrot_{run_id}_common{exec_id}.bmp"
+
+    if type == ApplicationType.COMMON:
+        output_path += f"/mandelbrot_id{run_id}_{type.value}_exec{exec_id}.bmp"
+    elif type == ApplicationType.OMP:
+        if thread is None:
+            print(f"[ERROR] Failed to save the output of mandelbrot. Missing number of thread.")
+            exit(-1)
+
+        output_path += f"/mandelbrot_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.bmp"
+
     with open(output_path, "wb") as file:
         _ = file.write(input)
 
@@ -379,8 +394,20 @@ def run_pi(
     return run_perf("pi", cmd, run_id)
 
 
-def run_mandelbrot(conn, app_id: int, run_id: int):
-    run_make("mandelbrot")
+def run_mandelbrot(
+    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+):
+    if type == ApplicationType.COMMON:
+        run_make("mandelbrot")
+    elif type == ApplicationType.OMP:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile mandelbrot with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        run_make("mandelbrot", ["omp", f"NUM_THREADS={thread}"])
+
     arguments = application_input_arguments(conn, app_id)
 
     app_path = os.path.join(APPLICATION_DIR, "mandelbrot")
@@ -457,10 +484,10 @@ def run(applications: pd.DataFrame):
             "exec": run_pi,
             "output": save_pi_output,
         },
-        # "mandelbrot": {
-        #     "exec": run_mandelbrot,
-        #     "output": save_mandelbrot_output,
-        # },
+        "mandelbrot": {
+            "exec": run_mandelbrot,
+            "output": save_mandelbrot_output,
+        },
         # "kmeans": {
         #     "exec": run_kmeans,
         #     "output": save_kmeans_output,
