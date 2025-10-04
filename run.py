@@ -264,6 +264,14 @@ def save_kmeans_output(run_id: int, exec_id: int, input: str):
     df.to_csv(output_path, index=False)
 
 
+def save_correlation_output(run_id: int, exec_id: int, input: str):
+    output_path = os.path.join(APPLICATION_DIR, "correlation", OUTPUT_DIR)
+    output_path += f"/correlation_{run_id}_common{exec_id}.parquet"
+    df = pd.read_csv(StringIO(input), header=None)
+    df.columns = [f"col_{idx}" for idx in range(df.shape[1])]
+    df.to_parquet(output_path, index=False)
+
+
 ################################################################################
 # Applications
 ################################################################################
@@ -315,6 +323,19 @@ def run_kmeans(conn, app_id: int, run_id: int):
     return run_perf("kmeans", cmd, run_id)
 
 
+def run_correlation(conn, app_id: int, run_id: int):
+    run_make("correlation")
+    arguments = application_input_arguments(conn, app_id)
+
+    app_path = os.path.join(APPLICATION_DIR, "correlation")
+    cmd = [
+        f"{app_path}/correlation.a",
+        f"{arguments['csv_file']}",
+    ]
+
+    return run_perf("correlation", cmd, run_id)
+
+
 def run(applications: pd.DataFrame):
     benchmark_func = {
         "2mm": {
@@ -332,6 +353,10 @@ def run(applications: pd.DataFrame):
         "kmeans": {
             "exec": run_kmeans,
             "output": save_kmeans_output,
+        },
+        "correlation": {
+            "exec": run_correlation,
+            "output": save_correlation_output,
         },
     }
 
@@ -363,7 +388,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'kmeans';"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'correlation';"
         ).df()
 
     # setup_environment(applications)
