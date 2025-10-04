@@ -1,10 +1,7 @@
 .vscode/
 .env/
+output/
+performance/
 *.a
 *.db
 *.db.wal
-*.parquet
-perf_*.txt
-Output/
-Performance/
-Evaluation/

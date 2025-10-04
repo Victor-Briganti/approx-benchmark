@@ -235,7 +235,13 @@ def save_2mm_output(run_id: int, exec_id: int, input: str):
     output_path = os.path.join(APPLICATION_DIR, "2mm", OUTPUT_DIR)
     df = pd.read_csv(StringIO(input), header=None)
     df.columns = [f"col_{idx}" for idx in range(df.shape[1])]
-    df.to_parquet(f"{output_path}/2mm_{run_id}_{exec_id}.parquet", index=False)
+    df.to_parquet(f"{output_path}/2mm_{run_id}_common{exec_id}.parquet", index=False)
+
+def save_pi_output(run_id: int, exec_id: int, input: str):
+    output_path = os.path.join(APPLICATION_DIR, "pi", OUTPUT_DIR)
+    output_path += f"/pi_{run_id}_common{exec_id}.txt"
+    with open(output_path, 'w') as file:
+        file.write(input)
 
 
 ################################################################################
@@ -244,13 +250,22 @@ def save_2mm_output(run_id: int, exec_id: int, input: str):
 
 
 def run_2mm(conn, app_id: int, run_id: int):
-    # run_make("2mm")
+    run_make("2mm")
     arguments = application_input_arguments(conn, app_id)
 
     app_path = os.path.join(APPLICATION_DIR, "2mm")
     cmd = [f"{app_path}/2mm.a", f"{arguments['matrix_size']}"]
 
     return run_perf("2mm", cmd, run_id)
+
+def run_pi(conn, app_id: int, run_id: int):
+    run_make("pi")
+    arguments = application_input_arguments(conn, app_id)
+
+    app_path = os.path.join(APPLICATION_DIR, "pi")
+    cmd = [f"{app_path}/pi.a", f"{arguments['num_iterations']}"]
+
+    return run_perf("pi", cmd, run_id)
 
 
 def run(applications: pd.DataFrame):
@@ -271,6 +286,21 @@ def run(applications: pd.DataFrame):
                     save_2mm_output(run_id, exec_idx, result.stdout)
                     save_performance(conn, run_id, perf_path)
 
+            if app == "pi":
+                for exec_idx in range(0, 10):
+                    run_id = insert_run_entry(conn, app_id, 1, APPLICATION_TYPE[0], exec_idx)
+                    print(f"[INFO] {app}: run_id({run_id}) thread(1) type(common) exec_num({exec_idx})")
+                    (result, perf_path) = run_pi(conn, app_id, run_id)
+                    update_run_end_time(conn, run_id)
+    
+                    if result.returncode != 0:
+                        log_run_error(conn, run_id, result.returncode, result.stderr)
+                        exit(-1)
+    
+                    save_pi_output(run_id, exec_idx, result.stdout)
+                    save_performance(conn, run_id, perf_path)
+
+
 
 ################################################################################
 # Main
@@ -279,8 +309,8 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false;"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'pi';"
         ).df()
 
-    setup_environment(applications)
+    # setup_environment(applications)
     run(applications)
