@@ -12,4 +12,4 @@ omp:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) mandelbrot.cpp -o mandelbrot_omp.a 
 
 clean:
-	@rm -rf *.a *.csv
+	@rm -rf *.a

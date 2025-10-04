@@ -47,7 +47,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
-#include <signal.h>
 #include <unistd.h>
 #include <vector>
 

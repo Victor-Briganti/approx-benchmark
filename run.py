@@ -137,18 +137,14 @@ def application_input_arguments(conn, benchmark_id: int):
     return json.loads(args[0])
 
 
-def run_perf(
-    app: str,
-    args: list[str],
-    run_id: int,
-):
+def run_perf(app: str, args: list[str], run_id: int, is_text: bool = True):
     output_path = os.path.join(
         APPLICATION_DIR, app, PERFORMANCE_DIR, f"perf_{run_id}.txt"
     )
     cmd = ["perf", "stat", "-o", output_path]
     cmd += args
 
-    result = subproc.run(cmd, capture_output=True, text=True)
+    result = subproc.run(cmd, capture_output=True, text=is_text)
     if result.returncode != 0:
         print(f"[ERROR] Benchmark {app} failed.")
 
@@ -192,7 +188,9 @@ def save_performance(conn, run_id: int, perf_path: str):
             elif idx == 7:
                 data = line.strip().split()
                 context_switches = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "context_switches", context_switches)
+                save_performance_stat(
+                    conn, run_id, "context_switches", context_switches
+                )
             elif idx == 8:
                 data = line.strip().split()
                 cpu_migrations = float(data[0].replace(",", ""))
@@ -237,10 +235,18 @@ def save_2mm_output(run_id: int, exec_id: int, input: str):
     df.columns = [f"col_{idx}" for idx in range(df.shape[1])]
     df.to_parquet(f"{output_path}/2mm_{run_id}_common{exec_id}.parquet", index=False)
 
+
 def save_pi_output(run_id: int, exec_id: int, input: str):
     output_path = os.path.join(APPLICATION_DIR, "pi", OUTPUT_DIR)
     output_path += f"/pi_{run_id}_common{exec_id}.txt"
-    with open(output_path, 'w') as file:
+    with open(output_path, "w") as file:
+        file.write(input)
+
+
+def save_mandelbrot_output(run_id: int, exec_id: int, input: str):
+    output_path = os.path.join(APPLICATION_DIR, "mandelbrot", OUTPUT_DIR)
+    output_path += f"/mandelbrot_{run_id}_common{exec_id}.bmp"
+    with open(output_path, "wb") as file:
         file.write(input)
 
 
@@ -258,6 +264,7 @@ def run_2mm(conn, app_id: int, run_id: int):
 
     return run_perf("2mm", cmd, run_id)
 
+
 def run_pi(conn, app_id: int, run_id: int):
     run_make("pi")
     arguments = application_input_arguments(conn, app_id)
@@ -268,38 +275,73 @@ def run_pi(conn, app_id: int, run_id: int):
     return run_perf("pi", cmd, run_id)
 
 
+def run_mandelbrot(conn, app_id: int, run_id: int):
+    run_make("mandelbrot")
+    arguments = application_input_arguments(conn, app_id)
+
+    app_path = os.path.join(APPLICATION_DIR, "mandelbrot")
+    cmd = [f"{app_path}/mandelbrot.a", f"{arguments['image_size']}"]
+
+    return run_perf("mandelbrot", cmd, run_id, False)
+
+
 def run(applications: pd.DataFrame):
     with get_database_connection() as conn:
         run_id = -1
         for app_id, app in zip(applications["id"], applications["name"]):
             if app == "2mm":
                 for exec_idx in range(0, 10):
-                    run_id = insert_run_entry(conn, app_id, 1, APPLICATION_TYPE[0], exec_idx)
-                    print(f"[INFO] {app}: run_id({run_id}) thread(1) type(common) exec_num({exec_idx})")
+                    run_id = insert_run_entry(
+                        conn, app_id, 1, APPLICATION_TYPE[0], exec_idx
+                    )
+                    print(
+                        f"[INFO] {app}: run_id({run_id}) thread(1) type(common) exec_num({exec_idx})"
+                    )
                     (result, perf_path) = run_2mm(conn, app_id, run_id)
                     update_run_end_time(conn, run_id)
-    
+
                     if result.returncode != 0:
                         log_run_error(conn, run_id, result.returncode, result.stderr)
                         exit(-1)
-    
+
                     save_2mm_output(run_id, exec_idx, result.stdout)
                     save_performance(conn, run_id, perf_path)
 
             if app == "pi":
                 for exec_idx in range(0, 10):
-                    run_id = insert_run_entry(conn, app_id, 1, APPLICATION_TYPE[0], exec_idx)
-                    print(f"[INFO] {app}: run_id({run_id}) thread(1) type(common) exec_num({exec_idx})")
+                    run_id = insert_run_entry(
+                        conn, app_id, 1, APPLICATION_TYPE[0], exec_idx
+                    )
+                    print(
+                        f"[INFO] {app}: run_id({run_id}) thread(1) type(common) exec_num({exec_idx})"
+                    )
                     (result, perf_path) = run_pi(conn, app_id, run_id)
                     update_run_end_time(conn, run_id)
-    
+
                     if result.returncode != 0:
                         log_run_error(conn, run_id, result.returncode, result.stderr)
                         exit(-1)
-    
+
                     save_pi_output(run_id, exec_idx, result.stdout)
                     save_performance(conn, run_id, perf_path)
 
+            if app == "mandelbrot":
+                for exec_idx in range(0, 10):
+                    run_id = insert_run_entry(
+                        conn, app_id, 1, APPLICATION_TYPE[0], exec_idx
+                    )
+                    print(
+                        f"[INFO] {app}: run_id({run_id}) thread(1) type(common) exec_num({exec_idx})"
+                    )
+                    (result, perf_path) = run_mandelbrot(conn, app_id, run_id)
+                    update_run_end_time(conn, run_id)
+
+                    if result.returncode != 0:
+                        log_run_error(conn, run_id, result.returncode, result.stderr)
+                        exit(-1)
+
+                    save_mandelbrot_output(run_id, exec_idx, result.stdout)
+                    save_performance(conn, run_id, perf_path)
 
 
 ################################################################################
@@ -309,7 +351,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'pi';"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name = 'mandelbrot';"
         ).df()
 
     # setup_environment(applications)
