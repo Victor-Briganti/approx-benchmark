@@ -41,10 +41,13 @@
 
 #include <cstdint>
 #include <iostream>
-#include <omp.h>
-#include <signal.h>
 #include <string>
 #include <unistd.h>
+
+#if _OPENMP
+#include <omp.h>
+#endif // _OPENMP
+
 
 struct RandState {
   uint64_t seed[2];
