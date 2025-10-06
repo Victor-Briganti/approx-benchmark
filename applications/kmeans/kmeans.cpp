@@ -104,7 +104,7 @@ float *kmeans_clustering(float *features, int numFeatures, int numPoints,
 
   for (int i = 0; i < iterations; i++) {
     double delta = 0.0f;
-#pragma omp parallel shared(features, centroids, newCentroids, newCentroidsLen)
+#pragma omp parallel shared(features, centroids, newCentroids, newCentroidsLen) num_threads(NUM_THREADS)
     {
 #pragma omp for reduction(+ : delta)                                           \
     reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)

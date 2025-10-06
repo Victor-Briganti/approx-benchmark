@@ -301,18 +301,40 @@ def save_mandelbrot_output(
         output_path += f"/mandelbrot_id{run_id}_{type.value}_exec{exec_id}.bmp"
     elif type == ApplicationType.OMP:
         if thread is None:
-            print(f"[ERROR] Failed to save the output of mandelbrot. Missing number of thread.")
+            print(
+                f"[ERROR] Failed to save the output of mandelbrot. Missing number of thread."
+            )
             exit(-1)
 
-        output_path += f"/mandelbrot_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.bmp"
+        output_path += (
+            f"/mandelbrot_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.bmp"
+        )
 
     with open(output_path, "wb") as file:
         _ = file.write(input)
 
 
-def save_kmeans_output(run_id: int, exec_id: int, input: str):
+def save_kmeans_output(
+    input: str,
+    run_id: int,
+    exec_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+):
     output_path = os.path.join(APPLICATION_DIR, "kmeans", OUTPUT_DIR)
-    output_path += f"/kmeans_{run_id}_common{exec_id}.csv"
+
+    if type == ApplicationType.COMMON:
+        output_path += f"/mandelbrot_id{run_id}_{type.value}_exec{exec_id}.bmp"
+    elif type == ApplicationType.OMP:
+        if thread is None:
+            print(
+                f"[ERROR] Failed to save the output of mandelbrot. Missing number of thread."
+            )
+            exit(-1)
+
+        output_path += (
+            f"/mandelbrot_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.bmp"
+        )
 
     df = pd.DataFrame()
     for line in input.splitlines():
@@ -416,8 +438,20 @@ def run_mandelbrot(
     return run_perf("mandelbrot", cmd, run_id, False)
 
 
-def run_kmeans(conn, app_id: int, run_id: int):
-    run_make("kmeans")
+def run_kmeans(
+    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+):
+    if type == ApplicationType.COMMON:
+        run_make("kmeans")
+    elif type == ApplicationType.OMP:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile kmeans with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        run_make("kmeans", ["omp", f"NUM_THREADS={thread}"])
+
     arguments = application_input_arguments(conn, app_id)
 
     app_path = os.path.join(APPLICATION_DIR, "kmeans")
@@ -488,10 +522,10 @@ def run(applications: pd.DataFrame):
             "exec": run_mandelbrot,
             "output": save_mandelbrot_output,
         },
-        # "kmeans": {
-        #     "exec": run_kmeans,
-        #     "output": save_kmeans_output,
-        # },
+        "kmeans": {
+            "exec": run_kmeans,
+            "output": save_kmeans_output,
+        },
         # "correlation": {
         #     "exec": run_correlation,
         #     "output": save_correlation_output,
@@ -508,6 +542,7 @@ def run(applications: pd.DataFrame):
 
     with get_database_connection() as conn:
         run_id = -1
+        # TODO: Remember to restore this to ApplicationType
         for type in [ApplicationType.OMP]:
             if type == ApplicationType.APPROX:
                 continue
@@ -543,7 +578,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='mandelbrot';"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='kmeans';"
         ).df()
 
     # setup_environment(applications)
