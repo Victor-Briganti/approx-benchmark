@@ -662,7 +662,7 @@ def run(applications: pd.DataFrame):
                         benchmark_func[app]["output"](
                             result.stdout, run_id, exec_idx, type, thread
                         )
-                        # save_performance(conn, run_id, perf_path)
+                        save_performance(conn, run_id, perf_path)
 
 
 ################################################################################
