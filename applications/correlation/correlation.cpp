@@ -108,7 +108,7 @@ double correlation(double *x, double *y, int rows) {
 double *correlationMatrix(double **&data, int columns, int rows) {
   double *matrix = new double[columns * rows]();
 
-#pragma omp parallel for collapse(2) shared(matrix) schedule(static)
+#pragma omp parallel for collapse(2) shared(matrix) schedule(static) num_threads(NUM_THREADS)
   for (int i = 0; i < columns; i++) {
     for (int j = i; j < columns; j++) {
       double r = (j == i) ? 1.0 : correlation(data[i], data[j], rows);

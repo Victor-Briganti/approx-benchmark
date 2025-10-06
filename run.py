@@ -346,17 +346,55 @@ def save_kmeans_output(
     df.to_csv(output_path, index=False)
 
 
-def save_correlation_output(run_id: int, exec_id: int, input: str):
+def save_correlation_output(
+    input: str,
+    run_id: int,
+    exec_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+):
     output_path = os.path.join(APPLICATION_DIR, "correlation", OUTPUT_DIR)
-    output_path += f"/correlation_{run_id}_common{exec_id}.parquet"
+
+    if type == ApplicationType.COMMON:
+        output_path += f"/correlation_id{run_id}_{type.value}_exec{exec_id}.parquet"
+    elif type == ApplicationType.OMP:
+        if thread is None:
+            print(
+                f"[ERROR] Failed to save the output of correlation. Missing number of thread."
+            )
+            exit(-1)
+
+        output_path += (
+            f"/correlation_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.parquet"
+        )
+
     df = pd.read_csv(StringIO(input), header=None)
     df.columns = [f"col_{idx}" for idx in range(df.shape[1])]
     df.to_parquet(output_path, index=False)
 
 
-def save_jacobi2d_output(run_id: int, exec_id: int, input: str):
-    output_path = os.path.join(APPLICATION_DIR, "jacobi2d", OUTPUT_DIR)
-    output_path += f"/jacobi2d_{run_id}_common{exec_id}.parquet"
+def save_jacobi2d_output(
+    input: str,
+    run_id: int,
+    exec_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+):
+    output_path = os.path.join(APPLICATION_DIR, "kmeans", OUTPUT_DIR)
+
+    if type == ApplicationType.COMMON:
+        output_path += f"/correlation_id{run_id}_{type.value}_exec{exec_id}.parquet"
+    elif type == ApplicationType.OMP:
+        if thread is None:
+            print(
+                f"[ERROR] Failed to save the output of correlation. Missing number of thread."
+            )
+            exit(-1)
+
+        output_path += (
+            f"/correlation_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.parquet"
+        )
+
     df = pd.read_csv(StringIO(input), header=None)
     df.columns = [f"col_{idx}" for idx in range(df.shape[1])]
     df.to_parquet(output_path, index=False)
@@ -466,8 +504,20 @@ def run_kmeans(
     return run_perf("kmeans", cmd, run_id)
 
 
-def run_correlation(conn, app_id: int, run_id: int):
-    run_make("correlation")
+def run_correlation(
+    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+):
+    if type == ApplicationType.COMMON:
+        run_make("correlation")
+    elif type == ApplicationType.OMP:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile correlation with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        run_make("correlation", ["omp", f"NUM_THREADS={thread}"])
+
     arguments = application_input_arguments(conn, app_id)
 
     app_path = os.path.join(APPLICATION_DIR, "correlation")
@@ -479,8 +529,20 @@ def run_correlation(conn, app_id: int, run_id: int):
     return run_perf("correlation", cmd, run_id)
 
 
-def run_jacobi2d(conn, app_id: int, run_id: int):
-    run_make("jacobi2d")
+def run_jacobi2d(
+    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+):
+    if type == ApplicationType.COMMON:
+        run_make("jacobi2d")
+    elif type == ApplicationType.OMP:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile jacobi2d with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        run_make("jacobi2d", ["omp", f"NUM_THREADS={thread}"])
+
     arguments = application_input_arguments(conn, app_id)
 
     app_path = os.path.join(APPLICATION_DIR, "jacobi2d")
@@ -526,14 +588,14 @@ def run(applications: pd.DataFrame):
             "exec": run_kmeans,
             "output": save_kmeans_output,
         },
-        # "correlation": {
-        #     "exec": run_correlation,
-        #     "output": save_correlation_output,
-        # },
-        # "jacobi2d": {
-        #     "exec": run_jacobi2d,
-        #     "output": save_jacobi2d_output,
-        # },
+        "correlation": {
+            "exec": run_correlation,
+            "output": save_correlation_output,
+        },
+        "jacobi2d": {
+            "exec": run_jacobi2d,
+            "output": save_jacobi2d_output,
+        },
         # "deriche": {
         #     "exec": run_deriche,
         #     "output": save_deriche_output,
