@@ -9,7 +9,7 @@ common:
 	$(CXX) $(CFLAGS) jacobi2d.cpp -o jacobi2d.a 
 
 omp:
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) jacobi2d.cpp -o jacobi2d_omp.a 
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) jacobi2d.cpp -o jacobi2d.a 
 
 clean:
 	@rm -rf *.a *.csv

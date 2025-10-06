@@ -9,7 +9,7 @@ common:
 	$(CXX) $(CFLAGS) 2mm.cpp -o 2mm.a 
 
 omp:
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm_omp.a 
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm.a 
 
 clean:
 	@rm -rf *.a *.csv

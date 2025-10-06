@@ -9,7 +9,7 @@ common:
 	$(CXX) $(CFLAGS) pi.cpp -o pi.a 
 
 omp:
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) pi.cpp -o pi_omp.a 
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) pi.cpp -o pi.a 
 
 clean:
 	@rm -rf *.a *.csv

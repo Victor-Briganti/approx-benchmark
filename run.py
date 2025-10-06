@@ -672,7 +672,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='deriche';"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false;"
         ).df()
 
     # setup_environment(applications)

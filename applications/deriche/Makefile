@@ -9,7 +9,7 @@ common:
 	$(CXX) $(CFLAGS) deriche.cpp -o deriche.a 
 
 omp:
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) deriche.cpp -o deriche_omp.a 
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) deriche.cpp -o deriche.a 
 
 clean:
 	@rm -rf *.a *.csv

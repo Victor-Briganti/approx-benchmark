@@ -9,7 +9,7 @@ common:
 	$(CXX) $(CFLAGS) correlation.cpp -o correlation.a 
 
 omp:
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) correlation.cpp -o correlation_omp.a 
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) correlation.cpp -o correlation.a 
 
 clean:
 	@rm -rf *.a *.csv

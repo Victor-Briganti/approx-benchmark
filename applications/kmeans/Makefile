@@ -9,7 +9,7 @@ common:
 	$(CXX) $(CFLAGS) kmeans.cpp -o kmeans.a 
 
 omp:
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) kmeans.cpp -o kmeans_omp.a 
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) kmeans.cpp -o kmeans.a 
 
 clean:
 	@rm -rf *.a *.csv
