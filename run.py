@@ -400,10 +400,30 @@ def save_jacobi2d_output(
     df.to_parquet(output_path, index=False)
 
 
-def save_deriche_output(run_id: int, exec_id: int, input: str):
+def save_deriche_output(
+    input: str,
+    run_id: int,
+    exec_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+):
     base_path = os.path.join(APPLICATION_DIR, "deriche", OUTPUT_DIR)
+
+    new_image = ""
+    if type == ApplicationType.COMMON:
+        new_image = base_path + f"/deriche_id{run_id}_{type.value}_exec{exec_id}.jpg"
+    elif type == ApplicationType.OMP:
+        if thread is None:
+            print(
+                f"[ERROR] Failed to save the output of deriche. Missing number of thread."
+            )
+            exit(-1)
+
+        new_image = base_path + (
+            f"/deriche_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.jpg"
+        )
+    
     current_image = base_path + "/output.jpg"
-    new_image = base_path + f"/deriche_{run_id}_common{exec_id}.jpg"
     os.rename(current_image, new_image)
 
 
@@ -555,8 +575,20 @@ def run_jacobi2d(
     return run_perf("jacobi2d", cmd, run_id)
 
 
-def run_deriche(conn, app_id: int, run_id: int):
-    run_make("deriche")
+def run_deriche(
+    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+):
+    if type == ApplicationType.COMMON:
+        run_make("deriche")
+    elif type == ApplicationType.OMP:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile deriche with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        run_make("deriche", ["omp", f"NUM_THREADS={thread}"])
+
     arguments = application_input_arguments(conn, app_id)
 
     app_path = os.path.join(APPLICATION_DIR, "deriche")
@@ -596,10 +628,10 @@ def run(applications: pd.DataFrame):
             "exec": run_jacobi2d,
             "output": save_jacobi2d_output,
         },
-        # "deriche": {
-        #     "exec": run_deriche,
-        #     "output": save_deriche_output,
-        # },
+        "deriche": {
+            "exec": run_deriche,
+            "output": save_deriche_output,
+        },
     }
 
     with get_database_connection() as conn:
@@ -640,7 +672,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='jacobi2d';"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='deriche';"
         ).df()
 
     # setup_environment(applications)

@@ -134,7 +134,7 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
   const float b1 = powf(2.0f, -alpha);
   const float b2 = -expf(-2.0f * alpha);
 
-#pragma omp parallel shared(imageOut)
+#pragma omp parallel shared(imageOut) num_threads(NUM_THREADS)
   {
 #pragma omp for schedule(static)
     for (int i = 0; i < width; i++) {
