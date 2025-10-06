@@ -380,19 +380,19 @@ def save_jacobi2d_output(
     type: ApplicationType,
     thread: int | None = None,
 ):
-    output_path = os.path.join(APPLICATION_DIR, "kmeans", OUTPUT_DIR)
+    output_path = os.path.join(APPLICATION_DIR, "jacobi2d", OUTPUT_DIR)
 
     if type == ApplicationType.COMMON:
-        output_path += f"/correlation_id{run_id}_{type.value}_exec{exec_id}.parquet"
+        output_path += f"/jacobi2d_id{run_id}_{type.value}_exec{exec_id}.parquet"
     elif type == ApplicationType.OMP:
         if thread is None:
             print(
-                f"[ERROR] Failed to save the output of correlation. Missing number of thread."
+                f"[ERROR] Failed to save the output of jacobi2d. Missing number of thread."
             )
             exit(-1)
 
         output_path += (
-            f"/correlation_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.parquet"
+            f"/jacobi2d_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.parquet"
         )
 
     df = pd.read_csv(StringIO(input), header=None)
@@ -640,7 +640,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='kmeans';"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='jacobi2d';"
         ).df()
 
     # setup_environment(applications)

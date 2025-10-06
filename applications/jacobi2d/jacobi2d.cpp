@@ -98,7 +98,7 @@ double *init_matrix(size_t size, int offset) {
 //===------------------------------------------------------------------------===
 
 void jacobi_2d(int steps, size_t size, double *A, double *B) {
-#pragma omp parallel
+#pragma omp parallel num_threads(NUM_THREADS)
   for (int t = 0; t < steps; t++) {
 #pragma omp for collapse(2) schedule(static)
     for (size_t i = 1; i < size - 1; i++) {
