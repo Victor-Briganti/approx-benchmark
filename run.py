@@ -422,7 +422,7 @@ def save_deriche_output(
         new_image = base_path + (
             f"/deriche_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.jpg"
         )
-    
+
     current_image = base_path + "/output.jpg"
     os.rename(current_image, new_image)
 
@@ -641,10 +641,12 @@ def run(applications: pd.DataFrame):
             if type == ApplicationType.APPROX:
                 continue
 
-            for thread in [None] if type == ApplicationType.COMMON else THREADS:
+            for thread in [1] if type == ApplicationType.COMMON else THREADS:
                 for app_id, app in zip(applications["id"], applications["name"]):
                     for exec_idx in range(0, 10):
-                        run_id = insert_run_entry(conn, app_id, 1, type.value, exec_idx)
+                        run_id = insert_run_entry(
+                            conn, app_id, thread, type.value, exec_idx
+                        )
                         print(
                             f"[INFO] {app}: run_id({run_id}) type({type.value}) thread({thread}) exec_num({exec_idx})"
                         )
