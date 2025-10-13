@@ -62,9 +62,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <unistd.h>
+
+#define L1_SIZE 32 /* Defined in KB */
 
 //===------------------------------------------------------------------------===
 // Helper Functions
@@ -82,13 +85,19 @@ void init_matrix(uint64_t *&matrix, size_t size, bool fill = false) {
   matrix = new uint64_t[size * size];
 
   if (fill) {
-#pragma omp parallel for collapse(2) num_threads(NUM_THREADS)
+#pragma omp parallel for collapse(2)
     for (size_t y = 0; y < size; y++) {
       for (size_t x = 0; x < size; x++) {
         matrix[y * size + x] = x + y;
       }
     }
   }
+}
+
+size_t block_size(size_t matrixSize) {
+  size_t block = (L1_SIZE * matrixSize) / (3 * sizeof(uint64_t));
+  double block_sqrt = round(sqrt(block));
+  return static_cast<size_t>(block_sqrt);
 }
 
 //===------------------------------------------------------------------------===
@@ -116,24 +125,34 @@ int main(int argc, char **argv) {
   init_matrix(D, matrixSize, true);
   init_matrix(E, matrixSize);
 
-#pragma omp parallel shared(A, B, C, D) num_threads(NUM_THREADS)
+#pragma omp parallel shared(A, B, C, D)
   {
-#pragma omp for collapse(2) schedule(static)
-    for (size_t i = 0; i < matrixSize; ++i) {
-      for (size_t k = 0; k < matrixSize; ++k) {
-        uint64_t columnVal = A[i * matrixSize + k];
-        for (size_t j = 0; j < matrixSize; ++j) {
-          C[i * matrixSize + j] += columnVal * B[k * matrixSize + j];
+    size_t BS = block_size(matrixSize);
+
+#pragma omp for schedule(static)
+    for (size_t ii = 0; ii < matrixSize; ii += BS) {
+      for (size_t kk = 0; kk < matrixSize; kk += BS) {
+        for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
+          for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
+            uint64_t a_val = A[i * matrixSize + k];
+            for (size_t j = 0; j < matrixSize; ++j) {
+              C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
+            }
+          }
         }
       }
     }
 
-#pragma omp for collapse(2) schedule(static)
-    for (size_t i = 0; i < matrixSize; ++i) {
-      for (size_t k = 0; k < matrixSize; ++k) {
-        uint64_t columnVal = C[i * matrixSize + k];
-        for (size_t j = 0; j < matrixSize; ++j) {
-          E[i * matrixSize + j] += columnVal * D[k * matrixSize + j];
+#pragma omp for schedule(static)
+    for (size_t ii = 0; ii < matrixSize; ii += BS) {
+      for (size_t kk = 0; kk < matrixSize; kk += BS) {
+        for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
+          for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
+            uint64_t c_val = C[i * matrixSize + k];
+            for (size_t j = 0; j < matrixSize; ++j) {
+              E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
+            }
+          }
         }
       }
     }
