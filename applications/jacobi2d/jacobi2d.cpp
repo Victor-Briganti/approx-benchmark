@@ -103,7 +103,7 @@ void jacobi_2d(int steps, size_t size, double *A, double *B) {
 #pragma omp for collapse(2) schedule(static)
     for (size_t i = 1; i < size - 1; i++) {
       for (size_t j = 1; j < size - 1; j++) {
-        B[i * size + j] = (A[i * size + j] + A[i * size + j - 1] +
+        B[i * size + j] = (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
                            A[(i - 1) * size + j] + A[(i + 1) * size + j]) /
                           4;
       }
@@ -112,7 +112,7 @@ void jacobi_2d(int steps, size_t size, double *A, double *B) {
 #pragma omp for collapse(2) schedule(static)
     for (size_t i = 1; i < size - 1; i++) {
       for (size_t j = 1; j < size - 1; j++) {
-        A[i * size + j] = (B[i * size + j] + B[i * size + j - 1] +
+        A[i * size + j] = (B[i * size + j] + B[i * size + j + 1] + B[i * size + j - 1] +
                            B[(i - 1) * size + j] + B[(i + 1) * size + j]) /
                           4;
       }
