@@ -5,3 +5,4 @@ performance/
 *.a
 *.db
 *.db.wal
+*.pdf
