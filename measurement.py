@@ -43,13 +43,19 @@ for bench in benchmarks:
         avg_pdf = f"{base_path}/{bench}/{metric}_avg.pdf"
         cv_pdf = f"{base_path}/{bench}/{metric}_std.pdf"
 
+        title_app = ""
+        if bench == "2mm":
+            title_app = "2MM"
+        else:
+            title_app = "K-Means"
+
         if metric == "cycles":
-            title_avg = "Média por Ciclo"
-            title_cv = "Coeficiente de Variação por Ciclo"
+            title_avg = f"{title_app} Média por Ciclo"
+            title_cv = f"{title_app} Coeficiente de Variação por Ciclo"
             ylabel_avg = "Média"
         else:
-            title_avg = "Média por Tempo de Execução"
-            title_cv = "Coeficiente de Variação por Tempo de Execução"
+            title_avg = f"{title_app} Média por Tempo de Execução"
+            title_cv = f"{title_app} Coeficiente de Variação por Tempo de Execução"
             ylabel_avg = "Média (ms)"
 
         plot_bar(
