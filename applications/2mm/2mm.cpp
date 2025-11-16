@@ -129,15 +129,16 @@ int main(int argc, char **argv) {
   {
     size_t BS = block_size(matrixSize);
 
+#if PERFO == 1
+#pragma omp approx for perfo(default, (int)(10 * DROP)) schedule(static)
+#else
 #pragma omp for schedule(static)
+#endif
     for (size_t ii = 0; ii < matrixSize; ii += BS) {
       for (size_t kk = 0; kk < matrixSize; kk += BS) {
         for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
           for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
             uint64_t a_val = A[i * matrixSize + k];
-#if PERFO == 1
-#pragma omp approx for perfo(default, (int)(10 * DROP))
-#endif
             for (size_t j = 0; j < matrixSize; ++j) {
               C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
             }
@@ -146,15 +147,16 @@ int main(int argc, char **argv) {
       }
     }
 
+#if PERFO == 1
+#pragma omp approx for perfo(default, (int)(10 * DROP)) schedule(static)
+#else
 #pragma omp for schedule(static)
+#endif
     for (size_t ii = 0; ii < matrixSize; ii += BS) {
       for (size_t kk = 0; kk < matrixSize; kk += BS) {
         for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
           for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
             uint64_t c_val = C[i * matrixSize + k];
-#if PERFO == 1
-#pragma omp approx for perfo(default, (int)(10 * DROP))
-#endif
             for (size_t j = 0; j < matrixSize; ++j) {
               E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
             }
