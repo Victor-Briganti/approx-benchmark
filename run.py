@@ -765,30 +765,30 @@ def run(applications: pd.DataFrame):
             "exec": run_2mm,
             "output": save_2mm_output,
         },
-        # "pi": {
-        #     "exec": run_pi,
-        #     "output": save_pi_output,
-        # },
-        # "mandelbrot": {
-        #     "exec": run_mandelbrot,
-        #     "output": save_mandelbrot_output,
-        # },
-        # "kmeans": {
-        #     "exec": run_kmeans,
-        #     "output": save_kmeans_output,
-        # },
-        # "correlation": {
-        #     "exec": run_correlation,
-        #     "output": save_correlation_output,
-        # },
-        # "jacobi2d": {
-        #     "exec": run_jacobi2d,
-        #     "output": save_jacobi2d_output,
-        # },
-        # "deriche": {
-        #     "exec": run_deriche,
-        #     "output": save_deriche_output,
-        # },
+        "pi": {
+            "exec": run_pi,
+            "output": save_pi_output,
+        },
+        "mandelbrot": {
+            "exec": run_mandelbrot,
+            "output": save_mandelbrot_output,
+        },
+        "kmeans": {
+            "exec": run_kmeans,
+            "output": save_kmeans_output,
+        },
+        "correlation": {
+            "exec": run_correlation,
+            "output": save_correlation_output,
+        },
+        "jacobi2d": {
+            "exec": run_jacobi2d,
+            "output": save_jacobi2d_output,
+        },
+        "deriche": {
+            "exec": run_deriche,
+            "output": save_deriche_output,
+        },
     }
 
     with get_database_connection() as conn:
@@ -847,7 +847,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false;"
+            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='2mm';"
         ).df()
 
     # setup_environment(applications)
