@@ -19,9 +19,9 @@ def plot_bar(values, labels, title, xlabel, ylabel, output_path, color):
     y_pos = np.arange(len(labels))
     plt.bar(y_pos, values, color=color)
     plt.xticks(y_pos, labels)
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.title(title, fontsize=16)
+    plt.xlabel(xlabel, fontsize=14)
+    plt.ylabel(ylabel, fontsize=14)
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
@@ -34,14 +34,14 @@ base_path = Path("./report/measurement")
 
 for bench in benchmarks:
     for metric in metrics:
-        csv_path = base_path / bench / f"{metric}.csv"
+        csv_path = f"{base_path}/{bench}/{metric}.csv"
         df = read_csv_numeric(csv_path)
 
         media = df["media"]
         cv = df["coeficiente_variacao"]
 
-        avg_pdf = f"{base_path}/{bench}/{metric}_avg.pdf"
-        cv_pdf = f"{base_path}/{bench}/{metric}_std.pdf"
+        avg_pdf = f"{base_path}/{bench}/{bench}_{metric}_avg.pdf"
+        cv_pdf = f"{base_path}/{bench}/{bench}_{metric}_std.pdf"
 
         title_app = ""
         if bench == "2mm":
