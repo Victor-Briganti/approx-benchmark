@@ -433,7 +433,13 @@ def save_deriche_output(
 
 
 def run_2mm(
-    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+    conn,
+    app_id: int,
+    run_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+    approx_tech: str | None = None,
+    approx_level: float | None = None,
 ):
     if type == ApplicationType.COMMON:
         run_make("2mm")
@@ -445,6 +451,22 @@ def run_2mm(
             exit(-1)
 
         run_make("2mm", ["omp", f"NUM_THREADS={thread}"])
+    else:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile 2mm with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        if approx_tech == None or approx_level == None:
+            print(
+                f"[ERROR] Failed to compile 2mm with OpenMP. Missing parameter for approx technique"
+            )
+            exit(-1)
+
+        run_make(
+            "2mm", [f"{approx_tech}", f"NUM_THREADS={thread}", f"DROP={approx_level}"]
+        )
 
     arguments = application_input_arguments(conn, app_id)
 
@@ -455,7 +477,13 @@ def run_2mm(
 
 
 def run_pi(
-    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+    conn,
+    app_id: int,
+    run_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+    approx_tech: str | None = None,
+    approx_level: float | None = None,
 ):
     if type == ApplicationType.COMMON:
         run_make("pi")
@@ -465,6 +493,20 @@ def run_pi(
             exit(-1)
 
         run_make("pi", ["omp", f"NUM_THREADS={thread}"])
+    else:
+        if thread == None:
+            print(f"[ERROR] Failed to compile pi with OpenMP. Missing number of thread")
+            exit(-1)
+
+        if approx_tech == None or approx_level == None:
+            print(
+                f"[ERROR] Failed to compile pi with OpenMP. Missing parameter for approx technique"
+            )
+            exit(-1)
+
+        run_make(
+            "pi", [f"{approx_tech}", f"NUM_THREADS={thread}", f"DROP={approx_level}"]
+        )
 
     arguments = application_input_arguments(conn, app_id)
 
@@ -475,7 +517,13 @@ def run_pi(
 
 
 def run_mandelbrot(
-    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+    conn,
+    app_id: int,
+    run_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+    approx_tech: str | None = None,
+    approx_level: float | None = None,
 ):
     if type == ApplicationType.COMMON:
         run_make("mandelbrot")
@@ -487,6 +535,23 @@ def run_mandelbrot(
             exit(-1)
 
         run_make("mandelbrot", ["omp", f"NUM_THREADS={thread}"])
+    else:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile mandelbrot with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        if approx_tech == None or approx_level == None:
+            print(
+                f"[ERROR] Failed to compile mandelbrot with OpenMP. Missing parameter for approx technique"
+            )
+            exit(-1)
+
+        run_make(
+            "mandelbrot",
+            [f"{approx_tech}", f"NUM_THREADS={thread}", f"DROP={approx_level}"],
+        )
 
     arguments = application_input_arguments(conn, app_id)
 
@@ -497,7 +562,13 @@ def run_mandelbrot(
 
 
 def run_kmeans(
-    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+    conn,
+    app_id: int,
+    run_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+    approx_tech: str | None = None,
+    approx_level: float | None = None,
 ):
     if type == ApplicationType.COMMON:
         run_make("kmeans")
@@ -509,6 +580,23 @@ def run_kmeans(
             exit(-1)
 
         run_make("kmeans", ["omp", f"NUM_THREADS={thread}"])
+    else:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile kmeans with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        if approx_tech == None or approx_level == None:
+            print(
+                f"[ERROR] Failed to compile kmeans with OpenMP. Missing parameter for approx technique"
+            )
+            exit(-1)
+
+        run_make(
+            "kmeans",
+            [f"{approx_tech}", f"NUM_THREADS={thread}", f"DROP={approx_level}"],
+        )
 
     arguments = application_input_arguments(conn, app_id)
 
@@ -525,7 +613,13 @@ def run_kmeans(
 
 
 def run_correlation(
-    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+    conn,
+    app_id: int,
+    run_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+    approx_tech: str | None = None,
+    approx_level: float | None = None,
 ):
     if type == ApplicationType.COMMON:
         run_make("correlation")
@@ -537,6 +631,23 @@ def run_correlation(
             exit(-1)
 
         run_make("correlation", ["omp", f"NUM_THREADS={thread}"])
+    else:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile correlation with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        if approx_tech == None or approx_level == None:
+            print(
+                f"[ERROR] Failed to compile correlation with OpenMP. Missing parameter for approx technique"
+            )
+            exit(-1)
+
+        run_make(
+            "correlation",
+            [f"{approx_tech}", f"NUM_THREADS={thread}", f"DROP={approx_level}"],
+        )
 
     arguments = application_input_arguments(conn, app_id)
 
@@ -550,7 +661,13 @@ def run_correlation(
 
 
 def run_jacobi2d(
-    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+    conn,
+    app_id: int,
+    run_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+    approx_tech: str | None = None,
+    approx_level: float | None = None,
 ):
     if type == ApplicationType.COMMON:
         run_make("jacobi2d")
@@ -562,6 +679,23 @@ def run_jacobi2d(
             exit(-1)
 
         run_make("jacobi2d", ["omp", f"NUM_THREADS={thread}"])
+    else:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile jacobi2d with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        if approx_tech == None or approx_level == None:
+            print(
+                f"[ERROR] Failed to compile jacobi2d with OpenMP. Missing parameter for approx technique"
+            )
+            exit(-1)
+
+        run_make(
+            "jacobi2d",
+            [f"{approx_tech}", f"NUM_THREADS={thread}", f"DROP={approx_level}"],
+        )
 
     arguments = application_input_arguments(conn, app_id)
 
@@ -576,7 +710,13 @@ def run_jacobi2d(
 
 
 def run_deriche(
-    conn, app_id: int, run_id: int, type: ApplicationType, thread: int | None = None
+    conn,
+    app_id: int,
+    run_id: int,
+    type: ApplicationType,
+    thread: int | None = None,
+    approx_tech: str | None = None,
+    approx_level: float | None = None,
 ):
     if type == ApplicationType.COMMON:
         run_make("deriche")
@@ -588,6 +728,23 @@ def run_deriche(
             exit(-1)
 
         run_make("deriche", ["omp", f"NUM_THREADS={thread}"])
+    else:
+        if thread == None:
+            print(
+                f"[ERROR] Failed to compile deriche with OpenMP. Missing number of thread"
+            )
+            exit(-1)
+
+        if approx_tech == None or approx_level == None:
+            print(
+                f"[ERROR] Failed to compile deriche with OpenMP. Missing parameter for approx technique"
+            )
+            exit(-1)
+
+        run_make(
+            "deriche",
+            [f"{approx_tech}", f"NUM_THREADS={thread}", f"DROP={approx_level}"],
+        )
 
     arguments = application_input_arguments(conn, app_id)
 
@@ -608,63 +765,79 @@ def run(applications: pd.DataFrame):
             "exec": run_2mm,
             "output": save_2mm_output,
         },
-        "pi": {
-            "exec": run_pi,
-            "output": save_pi_output,
-        },
-        "mandelbrot": {
-            "exec": run_mandelbrot,
-            "output": save_mandelbrot_output,
-        },
-        "kmeans": {
-            "exec": run_kmeans,
-            "output": save_kmeans_output,
-        },
-        "correlation": {
-            "exec": run_correlation,
-            "output": save_correlation_output,
-        },
-        "jacobi2d": {
-            "exec": run_jacobi2d,
-            "output": save_jacobi2d_output,
-        },
-        "deriche": {
-            "exec": run_deriche,
-            "output": save_deriche_output,
-        },
+        # "pi": {
+        #     "exec": run_pi,
+        #     "output": save_pi_output,
+        # },
+        # "mandelbrot": {
+        #     "exec": run_mandelbrot,
+        #     "output": save_mandelbrot_output,
+        # },
+        # "kmeans": {
+        #     "exec": run_kmeans,
+        #     "output": save_kmeans_output,
+        # },
+        # "correlation": {
+        #     "exec": run_correlation,
+        #     "output": save_correlation_output,
+        # },
+        # "jacobi2d": {
+        #     "exec": run_jacobi2d,
+        #     "output": save_jacobi2d_output,
+        # },
+        # "deriche": {
+        #     "exec": run_deriche,
+        #     "output": save_deriche_output,
+        # },
     }
 
     with get_database_connection() as conn:
         run_id = -1
-        # TODO: Remember to restore this to ApplicationType
-        for type in [ApplicationType.OMP]:
-            if type == ApplicationType.APPROX:
-                continue
-
+        for type in ApplicationType:
             for thread in [1] if type == ApplicationType.COMMON else THREADS:
-                for app_id, app in zip(applications["id"], applications["name"]):
-                    for exec_idx in range(0, 10):
-                        run_id = insert_run_entry(
-                            conn, app_id, thread, type.value, exec_idx
-                        )
-                        print(
-                            f"[INFO] {app}: run_id({run_id}) type({type.value}) thread({thread}) exec_num({exec_idx})"
-                        )
-                        (result, perf_path) = benchmark_func[app]["exec"](
-                            conn, app_id, run_id, type, thread
-                        )
+                for approx_tech in (
+                    [None] if type != ApplicationType.APPROX else ["perfo_default"]
+                ):
+                    for approx_level in (
+                        [None] if type != ApplicationType.APPROX else range(1, 6)
+                    ):
+                        for app_id, app in zip(
+                            applications["id"], applications["name"]
+                        ):
+                            for exec_idx in range(0, 10):
+                                run_id = insert_run_entry(
+                                    conn,
+                                    app_id,
+                                    thread,
+                                    type.value,
+                                    exec_idx,
+                                    approx_tech,
+                                    approx_level,
+                                )
+                                print(
+                                    f"[INFO] {app}: run_id({run_id}) type({type.value}) thread({thread}) exec_num({exec_idx})"
+                                )
+                                (result, perf_path) = benchmark_func[app]["exec"](
+                                    conn,
+                                    app_id,
+                                    run_id,
+                                    type,
+                                    thread,
+                                    approx_tech,
+                                    approx_level,
+                                )
 
-                        update_run_end_time(conn, run_id)
-                        if result.returncode != 0:
-                            log_run_error(
-                                conn, run_id, result.returncode, result.stderr
-                            )
-                            exit(-1)
+                                update_run_end_time(conn, run_id)
+                                if result.returncode != 0:
+                                    log_run_error(
+                                        conn, run_id, result.returncode, result.stderr
+                                    )
+                                    exit(-1)
 
-                        benchmark_func[app]["output"](
-                            result.stdout, run_id, exec_idx, type, thread
-                        )
-                        save_performance(conn, run_id, perf_path)
+                                benchmark_func[app]["output"](
+                                    result.stdout, run_id, exec_idx, type, thread
+                                )
+                                save_performance(conn, run_id, perf_path)
 
 
 ################################################################################

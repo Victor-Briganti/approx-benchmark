@@ -2,6 +2,7 @@ CXX=/home/aJoaoBriganti/bin/clang++ --gcc-install-dir=/usr/lib/gcc/x86_64-linux-
 CFLAGS:=-Wall -Wextra -O3 -stdlib=libstdc++
 OMPFLAGS:=-fopenmp -I/home/aJoaoBriganti/approx-llvm/build/projects/openmp/runtime/src/ -lomp -L/home/aJoaoBriganti/approx-llvm/build/lib -Wl,-rpath,/home/aJoaoBriganti/approx-llvm/build/lib
 NUM_THREADS?=$(shell nproc)
+DROP?=0.5
 
 all: common
 
@@ -10,6 +11,9 @@ common:
 
 omp:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm.a 
+
+perfo_default:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DPERFO=1 -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm.a 
 
 clean:
 	@rm -rf *.a *.csv

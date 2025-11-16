@@ -135,6 +135,9 @@ int main(int argc, char **argv) {
         for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
           for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
             uint64_t a_val = A[i * matrixSize + k];
+#ifdef PERFO == 1
+#pragma omp approx for perfo(default, (int)(10 * DROP))
+#endif
             for (size_t j = 0; j < matrixSize; ++j) {
               C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
             }
@@ -149,6 +152,9 @@ int main(int argc, char **argv) {
         for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
           for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
             uint64_t c_val = C[i * matrixSize + k];
+#ifdef PERFO == 1
+#pragma omp approx for perfo(default, (int)(10 * DROP))
+#endif
             for (size_t j = 0; j < matrixSize; ++j) {
               E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
             }
