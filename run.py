@@ -814,9 +814,14 @@ def run(applications: pd.DataFrame):
                                     approx_tech,
                                     approx_level,
                                 )
-                                print(
-                                    f"[INFO] {app}: run_id({run_id}) type({type.value}) thread({thread}) exec_num({exec_idx})"
-                                )
+
+                                info = ""
+                                if approx_tech == None:
+                                    info = f"[INFO] {app}: run_id({run_id}) type({type.value}) thread({thread}) exec_num({exec_idx})"
+                                else:
+                                    info = f"[INFO] {app}: run_id({run_id}) type({type.value}) approx_tech({approx_tech}) approx_level({approx_level}) thread({thread}) exec_num({exec_idx})"
+
+                                print(info)
                                 (result, perf_path) = benchmark_func[app]["exec"](
                                     conn,
                                     app_id,
