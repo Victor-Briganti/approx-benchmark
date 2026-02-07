@@ -252,9 +252,7 @@ def save_2mm_output(
         output_path += f"/2mm_id{run_id}_{type.value}_exec{exec_id}.parquet"
     elif type == ApplicationType.OMP:
         if thread is None:
-            print(
-                f"[ERROR] Failed to save the output of 2mm. Missing number of thread."
-            )
+            print("[ERROR] Failed to save the output of 2mm. Missing number of thread.")
             exit(-1)
 
         output_path += (
@@ -279,7 +277,7 @@ def save_pi_output(
         output_path += f"/pi_id{run_id}_{type.value}_exec{exec_id}.txt"
     elif type == ApplicationType.OMP:
         if thread is None:
-            print(f"[ERROR] Failed to save the output of pi. Missing number of thread.")
+            print("[ERROR] Failed to save the output of pi. Missing number of thread.")
             exit(-1)
 
         output_path += f"/pi_id{run_id}_{type.value}_thread{thread}_exec{exec_id}.txt"
@@ -302,7 +300,7 @@ def save_mandelbrot_output(
     elif type == ApplicationType.OMP:
         if thread is None:
             print(
-                f"[ERROR] Failed to save the output of mandelbrot. Missing number of thread."
+                "[ERROR] Failed to save the output of mandelbrot. Missing number of thread."
             )
             exit(-1)
 
@@ -328,7 +326,7 @@ def save_kmeans_output(
     elif type == ApplicationType.OMP:
         if thread is None:
             print(
-                f"[ERROR] Failed to save the output of mandelbrot. Missing number of thread."
+                "[ERROR] Failed to save the output of mandelbrot. Missing number of thread."
             )
             exit(-1)
 
@@ -360,7 +358,7 @@ def save_correlation_output(
     elif type == ApplicationType.OMP:
         if thread is None:
             print(
-                f"[ERROR] Failed to save the output of correlation. Missing number of thread."
+                "[ERROR] Failed to save the output of correlation. Missing number of thread."
             )
             exit(-1)
 
@@ -387,7 +385,7 @@ def save_jacobi2d_output(
     elif type == ApplicationType.OMP:
         if thread is None:
             print(
-                f"[ERROR] Failed to save the output of jacobi2d. Missing number of thread."
+                "[ERROR] Failed to save the output of jacobi2d. Missing number of thread."
             )
             exit(-1)
 
@@ -415,7 +413,7 @@ def save_deriche_output(
     elif type == ApplicationType.OMP:
         if thread is None:
             print(
-                f"[ERROR] Failed to save the output of deriche. Missing number of thread."
+                "[ERROR] Failed to save the output of deriche. Missing number of thread."
             )
             exit(-1)
 
@@ -444,23 +442,19 @@ def run_2mm(
     if type == ApplicationType.COMMON:
         run_make("2mm")
     elif type == ApplicationType.OMP:
-        if thread == None:
-            print(
-                f"[ERROR] Failed to compile 2mm with OpenMP. Missing number of thread"
-            )
+        if thread is None:
+            print("[ERROR] Failed to compile 2mm with OpenMP. Missing number of thread")
             exit(-1)
 
         run_make("2mm", ["omp", f"NUM_THREADS={thread}"])
     else:
-        if thread == None:
-            print(
-                f"[ERROR] Failed to compile 2mm with OpenMP. Missing number of thread"
-            )
+        if thread is None:
+            print("[ERROR] Failed to compile 2mm with OpenMP. Missing number of thread")
             exit(-1)
 
-        if approx_tech == None or approx_level == None:
+        if approx_tech is None or approx_level is None:
             print(
-                f"[ERROR] Failed to compile 2mm with OpenMP. Missing parameter for approx technique"
+                "[ERROR] Failed to compile 2mm with OpenMP. Missing parameter for approx technique"
             )
             exit(-1)
 
@@ -488,19 +482,19 @@ def run_pi(
     if type == ApplicationType.COMMON:
         run_make("pi")
     elif type == ApplicationType.OMP:
-        if thread == None:
-            print(f"[ERROR] Failed to compile pi with OpenMP. Missing number of thread")
+        if thread is None:
+            print("[ERROR] Failed to compile pi with OpenMP. Missing number of thread")
             exit(-1)
 
         run_make("pi", ["omp", f"NUM_THREADS={thread}"])
     else:
-        if thread == None:
-            print(f"[ERROR] Failed to compile pi with OpenMP. Missing number of thread")
+        if thread is None:
+            print("[ERROR] Failed to compile pi with OpenMP. Missing number of thread")
             exit(-1)
 
-        if approx_tech == None or approx_level == None:
+        if approx_tech is None or approx_level is None:
             print(
-                f"[ERROR] Failed to compile pi with OpenMP. Missing parameter for approx technique"
+                "[ERROR] Failed to compile pi with OpenMP. Missing parameter for approx technique"
             )
             exit(-1)
 
@@ -528,23 +522,23 @@ def run_mandelbrot(
     if type == ApplicationType.COMMON:
         run_make("mandelbrot")
     elif type == ApplicationType.OMP:
-        if thread == None:
+        if thread is None:
             print(
-                f"[ERROR] Failed to compile mandelbrot with OpenMP. Missing number of thread"
+                "[ERROR] Failed to compile mandelbrot with OpenMP. Missing number of thread"
             )
             exit(-1)
 
         run_make("mandelbrot", ["omp", f"NUM_THREADS={thread}"])
     else:
-        if thread == None:
+        if thread is None:
             print(
-                f"[ERROR] Failed to compile mandelbrot with OpenMP. Missing number of thread"
+                "[ERROR] Failed to compile mandelbrot with OpenMP. Missing number of thread"
             )
             exit(-1)
 
-        if approx_tech == None or approx_level == None:
+        if approx_tech is None or approx_level is None:
             print(
-                f"[ERROR] Failed to compile mandelbrot with OpenMP. Missing parameter for approx technique"
+                "[ERROR] Failed to compile mandelbrot with OpenMP. Missing parameter for approx technique"
             )
             exit(-1)
 
@@ -573,23 +567,23 @@ def run_kmeans(
     if type == ApplicationType.COMMON:
         run_make("kmeans")
     elif type == ApplicationType.OMP:
-        if thread == None:
+        if thread is None:
             print(
-                f"[ERROR] Failed to compile kmeans with OpenMP. Missing number of thread"
+                "[ERROR] Failed to compile kmeans with OpenMP. Missing number of thread"
             )
             exit(-1)
 
         run_make("kmeans", ["omp", f"NUM_THREADS={thread}"])
     else:
-        if thread == None:
+        if thread is None:
             print(
-                f"[ERROR] Failed to compile kmeans with OpenMP. Missing number of thread"
+                "[ERROR] Failed to compile kmeans with OpenMP. Missing number of thread"
             )
             exit(-1)
 
-        if approx_tech == None or approx_level == None:
+        if approx_tech is None or approx_level is None:
             print(
-                f"[ERROR] Failed to compile kmeans with OpenMP. Missing parameter for approx technique"
+                "[ERROR] Failed to compile kmeans with OpenMP. Missing parameter for approx technique"
             )
             exit(-1)
 
@@ -624,23 +618,23 @@ def run_correlation(
     if type == ApplicationType.COMMON:
         run_make("correlation")
     elif type == ApplicationType.OMP:
-        if thread == None:
+        if thread is None:
             print(
-                f"[ERROR] Failed to compile correlation with OpenMP. Missing number of thread"
+                "[ERROR] Failed to compile correlation with OpenMP. Missing number of thread"
             )
             exit(-1)
 
         run_make("correlation", ["omp", f"NUM_THREADS={thread}"])
     else:
-        if thread == None:
+        if thread is None:
             print(
-                f"[ERROR] Failed to compile correlation with OpenMP. Missing number of thread"
+                "[ERROR] Failed to compile correlation with OpenMP. Missing number of thread"
             )
             exit(-1)
 
-        if approx_tech == None or approx_level == None:
+        if approx_tech is None or approx_level is None:
             print(
-                f"[ERROR] Failed to compile correlation with OpenMP. Missing parameter for approx technique"
+                "[ERROR] Failed to compile correlation with OpenMP. Missing parameter for approx technique"
             )
             exit(-1)
 
@@ -672,23 +666,23 @@ def run_jacobi2d(
     if type == ApplicationType.COMMON:
         run_make("jacobi2d")
     elif type == ApplicationType.OMP:
-        if thread == None:
+        if thread is None:
             print(
-                f"[ERROR] Failed to compile jacobi2d with OpenMP. Missing number of thread"
+                "[ERROR] Failed to compile jacobi2d with OpenMP. Missing number of thread"
             )
             exit(-1)
 
         run_make("jacobi2d", ["omp", f"NUM_THREADS={thread}"])
     else:
-        if thread == None:
+        if thread is None:
             print(
-                f"[ERROR] Failed to compile jacobi2d with OpenMP. Missing number of thread"
+                "[ERROR] Failed to compile jacobi2d with OpenMP. Missing number of thread"
             )
             exit(-1)
 
-        if approx_tech == None or approx_level == None:
+        if approx_tech is None or approx_level is None:
             print(
-                f"[ERROR] Failed to compile jacobi2d with OpenMP. Missing parameter for approx technique"
+                "[ERROR] Failed to compile jacobi2d with OpenMP. Missing parameter for approx technique"
             )
             exit(-1)
 
@@ -721,23 +715,23 @@ def run_deriche(
     if type == ApplicationType.COMMON:
         run_make("deriche")
     elif type == ApplicationType.OMP:
-        if thread == None:
+        if thread is None:
             print(
-                f"[ERROR] Failed to compile deriche with OpenMP. Missing number of thread"
+                "[ERROR] Failed to compile deriche with OpenMP. Missing number of thread"
             )
             exit(-1)
 
         run_make("deriche", ["omp", f"NUM_THREADS={thread}"])
     else:
-        if thread == None:
+        if thread is None:
             print(
-                f"[ERROR] Failed to compile deriche with OpenMP. Missing number of thread"
+                "[ERROR] Failed to compile deriche with OpenMP. Missing number of thread"
             )
             exit(-1)
 
-        if approx_tech == None or approx_level == None:
+        if approx_tech is None or approx_level is None:
             print(
-                f"[ERROR] Failed to compile deriche with OpenMP. Missing parameter for approx technique"
+                "[ERROR] Failed to compile deriche with OpenMP. Missing parameter for approx technique"
             )
             exit(-1)
 
@@ -816,7 +810,7 @@ def run(applications: pd.DataFrame):
                                 )
 
                                 info = ""
-                                if approx_tech == None:
+                                if approx_tech is None:
                                     info = f"[INFO] {app}: run_id({run_id}) type({type.value}) thread({thread}) exec_num({exec_idx})"
                                 else:
                                     info = f"[INFO] {app}: run_id({run_id}) type({type.value}) approx_tech({approx_tech}) approx_level({approx_level}) thread({thread}) exec_num({exec_idx})"
