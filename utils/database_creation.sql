@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS "Server" (
   
   "cpu_description" VARCHAR NOT NULL,
   "hertz" DECIMAL(3,2) NOT NULL,
+  "cores" INTEGER NOT NULL,
+  "threads" INTEGER NOT NULL,
   "ram_memory" INTEGER NOT NULL,
   "operating_system" VARCHAR NOT NULL,
 );
