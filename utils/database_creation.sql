@@ -23,14 +23,13 @@ CREATE TABLE IF NOT EXISTS "benchmark" (
 );
 
 CREATE TABLE IF NOT EXISTS "input" (
-  "id" BIGINT NOT NULL,
   "benchmark_name" VARCHAR,
   "benchmark_version" BIGINT NOT NULL,
 
   "binary" BOOLEAN,
   "arguments" JSON,
 
-  PRIMARY KEY ("id", "benchmark_name", "benchmark_version"),
+  PRIMARY KEY ("benchmark_name", "benchmark_version"),
   FOREIGN KEY ("benchmark_name", "benchmark_version")
   REFERENCES "benchmark" ("name", "version")
 );

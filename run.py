@@ -28,7 +28,7 @@ REPORT_DIR = "report"
 NUM_EXEC = 10
 THREADS = [1, 2, 4, 8]
 
-HARDWARE_ID = 1
+SERVER_HOSTNAME = "Armagedon"
 DATABASE_PATH = "database.db"
 
 ################################################################################
@@ -91,33 +91,65 @@ def run_make(app: str, args: list[str] | None = None):
         exit(-1)
 
 
+def next_run_id(conn, bench_name: str, bench_version: int):
+    return conn.execute(
+        """
+        SELECT max(id) FROM run WHERE benchmark_name = ? AND benchmark_version = ?;        """,
+        (
+            bench_name,
+            bench_version,
+        ),
+    ).fetchone()[0]
+
+
 def insert_run_entry(
     conn,
-    bench_id: int,
+    bench_name: str,
+    bench_version: int,
     thread: int,
     run_type: str,
-    exec_num: int,
     approx_tech: str | None = None,
-    approx_level: float | None = None,
+    approx_rate: float | None = None,
 ):
+    id = next_run_id(conn, bench_name, bench_version)
+    id = 0 if id is None else id + 1
     conn.execute(
         """
         INSERT INTO run(
-            benchmark_id, hardware_id, thread, type,
-            execution_num, approx_technique, approx_level,
+            id,
+            benchmark_name,
+            benchmark_version,
+            server_name,
+            thread,
+            type,
+            approx_technique,
+            approx_rate,
             start_time
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, current_localtimestamp());
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, current_localtimestamp());
         """,
-        (bench_id, HARDWARE_ID, thread, run_type, exec_num, approx_tech, approx_level),
+        (
+            id,
+            bench_name,
+            bench_version,
+            SERVER_HOSTNAME,
+            thread,
+            run_type,
+            approx_tech,
+            approx_rate,
+        ),
     )
-    run_id = conn.execute("SELECT max(id) FROM run").fetchone()[0]
-    return run_id
+    return next_run_id(conn, bench_name, bench_version)
 
 
-def update_run_end_time(conn, run_id: int):
+def update_run_end_time(conn, id: int, bench_name: str, bench_version: int):
     conn.execute(
-        "UPDATE run SET end_time = current_localtimestamp() WHERE id = ?;", (run_id,)
+        "UPDATE run SET end_time = current_localtimestamp() WHERE id = ? AND benchmark_name = ? AND benchmark_version = ?;",
+        (
+            id,
+            bench_name,
+            bench_version,
+        ),
     )
 
 
@@ -136,20 +168,33 @@ def log_run_error(conn, run_id: int, returncode: int, stderr: str):
     )
 
 
-def application_input_arguments(conn, benchmark_id: int):
+def application_input_arguments(conn, bench_name: str, bench_version: int):
     args = conn.execute(
         """
-        SELECT arguments FROM input WHERE benchmark_id = ?;
+        SELECT arguments FROM input WHERE benchmark_name = ? AND benchmark_version = ?;
         """,
-        (benchmark_id,),
+        (
+            bench_name,
+            bench_version,
+        ),
     ).fetchone()
 
     return json.loads(args[0])
 
 
-def run_perf(app: str, args: list[str], run_id: int, is_text: bool = True):
+def run_perf(
+    app: str,
+    args: list[str],
+    bench_name: str,
+    bench_version: int,
+    run_id: int,
+    is_text: bool = True,
+):
     output_path = os.path.join(
-        APPLICATION_DIR, app, PERFORMANCE_DIR, f"perf_{run_id}.txt"
+        APPLICATION_DIR,
+        app,
+        PERFORMANCE_DIR,
+        f"perf_{bench_name}_v{bench_version}_{run_id}.txt",
     )
     cmd = ["perf", "stat", "-o", output_path]
     cmd += args
@@ -166,17 +211,26 @@ def run_perf(app: str, args: list[str], run_id: int, is_text: bool = True):
 ################################################################################
 
 
-def save_performance_stat(conn, run_id, metric_name, metric_value):
+def save_performance_stat(
+    conn,
+    run_id: int,
+    bench_name: str,
+    bench_version: int,
+    metric_name: str,
+    metric_value: float,
+):
     _ = conn.execute(
         """
-            INSERT INTO performance_stat(run_id, metric_name, metric_value)
-            VALUES (?, ?, ?)
+            INSERT INTO performance_stat(run_id, benchmark_name, benchmark_version, metric_name, metric_value)
+            VALUES (?, ?, ?, ?, ?)
             """,
-        (run_id, metric_name, metric_value),
+        (run_id, bench_name, bench_version, metric_name, metric_value),
     )
 
 
-def save_performance(conn, run_id: int, perf_path: str):
+def save_performance(
+    conn, run_id: int, bench_name: str, bench_version: int, perf_path: str
+):
     with open(f"{perf_path}", "r") as file:
         task_clock: float = 0
         context_switches: float = 0
@@ -194,49 +248,89 @@ def save_performance(conn, run_id: int, perf_path: str):
             if idx == 6:
                 data = line.strip().split()
                 task_clock = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "task_clock", task_clock)
+                save_performance_stat(
+                    conn, run_id, bench_name, bench_version, "task_clock", task_clock
+                )
             elif idx == 7:
                 data = line.strip().split()
                 context_switches = float(data[0].replace(",", ""))
                 save_performance_stat(
-                    conn, run_id, "context_switches", context_switches
+                    conn,
+                    run_id,
+                    bench_name,
+                    bench_version,
+                    "context_switches",
+                    context_switches,
                 )
             elif idx == 8:
                 data = line.strip().split()
                 cpu_migrations = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "cpu_migrations", cpu_migrations)
+                save_performance_stat(
+                    conn,
+                    run_id,
+                    bench_name,
+                    bench_version,
+                    "cpu_migrations",
+                    cpu_migrations,
+                )
             elif idx == 9:
                 data = line.strip().split()
                 page_faults = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "page_faults", page_faults)
+                save_performance_stat(
+                    conn, run_id, bench_name, bench_version, "page_faults", page_faults
+                )
             elif idx == 10:
                 data = line.strip().split()
                 cycles = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "cycles", cycles)
+                save_performance_stat(
+                    conn, run_id, bench_name, bench_version, "cycles", cycles
+                )
             elif idx == 11:
                 data = line.strip().split()
                 instructions = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "instructions", instructions)
+                save_performance_stat(
+                    conn,
+                    run_id,
+                    bench_name,
+                    bench_version,
+                    "instructions",
+                    instructions,
+                )
             elif idx == 12:
                 data = line.strip().split()
                 branches = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "branches", branches)
+                save_performance_stat(
+                    conn, run_id, bench_name, bench_version, "branches", branches
+                )
             elif idx == 13:
                 data = line.strip().split()
                 branch_misses = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "branch_misses", branch_misses)
+                save_performance_stat(
+                    conn,
+                    run_id,
+                    bench_name,
+                    bench_version,
+                    "branch_misses",
+                    branch_misses,
+                )
             elif idx == 15:
                 data = line.strip().split()
                 real_time = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "real_time", real_time)
+                save_performance_stat(
+                    conn, run_id, bench_name, bench_version, "real_time", real_time
+                )
             elif idx == 17:
                 data = line.strip().split()
                 user_time = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "user_time", user_time)
+                save_performance_stat(
+                    conn, run_id, bench_name, bench_version, "user_time", user_time
+                )
             elif idx == 18:
                 data = line.strip().split()
                 sys_time = float(data[0].replace(",", ""))
-                save_performance_stat(conn, run_id, "sys_time", sys_time)
+                save_performance_stat(
+                    conn, run_id, bench_name, bench_version, "sys_time", sys_time
+                )
 
 
 def save_2mm_output(
@@ -432,7 +526,8 @@ def save_deriche_output(
 
 def run_2mm(
     conn,
-    app_id: int,
+    bench_name: str,
+    bench_version: int,
     run_id: int,
     type: ApplicationType,
     thread: int | None = None,
@@ -462,12 +557,12 @@ def run_2mm(
             "2mm", [f"{approx_tech}", f"NUM_THREADS={thread}", f"DROP={approx_level}"]
         )
 
-    arguments = application_input_arguments(conn, app_id)
+    arguments = application_input_arguments(conn, bench_name, bench_version)
 
     app_path = os.path.join(APPLICATION_DIR, "2mm")
     cmd = [f"{app_path}/2mm.a", f"{arguments['matrix_size']}"]
 
-    return run_perf("2mm", cmd, run_id)
+    return run_perf("2mm", cmd, bench_name, bench_version, run_id)
 
 
 def run_pi(
@@ -759,34 +854,33 @@ def run(applications: pd.DataFrame):
             "exec": run_2mm,
             "output": save_2mm_output,
         },
-        "pi": {
-            "exec": run_pi,
-            "output": save_pi_output,
-        },
-        "mandelbrot": {
-            "exec": run_mandelbrot,
-            "output": save_mandelbrot_output,
-        },
-        "kmeans": {
-            "exec": run_kmeans,
-            "output": save_kmeans_output,
-        },
-        "correlation": {
-            "exec": run_correlation,
-            "output": save_correlation_output,
-        },
-        "jacobi2d": {
-            "exec": run_jacobi2d,
-            "output": save_jacobi2d_output,
-        },
-        "deriche": {
-            "exec": run_deriche,
-            "output": save_deriche_output,
-        },
+        # "pi": {
+        #     "exec": run_pi,
+        #     "output": save_pi_output,
+        # },
+        # "mandelbrot": {
+        #     "exec": run_mandelbrot,
+        #     "output": save_mandelbrot_output,
+        # },
+        # "kmeans": {
+        #     "exec": run_kmeans,
+        #     "output": save_kmeans_output,
+        # },
+        # "correlation": {
+        #     "exec": run_correlation,
+        #     "output": save_correlation_output,
+        # },
+        # "jacobi2d": {
+        #     "exec": run_jacobi2d,
+        #     "output": save_jacobi2d_output,
+        # },
+        # "deriche": {
+        #     "exec": run_deriche,
+        #     "output": save_deriche_output,
+        # },
     }
 
     with get_database_connection() as conn:
-        run_id = -1
         for type in ApplicationType:
             for thread in [1] if type == ApplicationType.COMMON else THREADS:
                 for approx_tech in (
@@ -795,30 +889,31 @@ def run(applications: pd.DataFrame):
                     for approx_level in (
                         [None] if type != ApplicationType.APPROX else range(1, 6)
                     ):
-                        for app_id, app in zip(
-                            applications["id"], applications["name"]
+                        for app_name, app_version in zip(
+                            applications["name"], applications["version"]
                         ):
                             for exec_idx in range(0, 10):
                                 run_id = insert_run_entry(
                                     conn,
-                                    app_id,
+                                    app_name,
+                                    app_version,
                                     thread,
                                     type.value,
-                                    exec_idx,
                                     approx_tech,
                                     approx_level,
                                 )
 
                                 info = ""
                                 if approx_tech is None:
-                                    info = f"[INFO] {app}: run_id({run_id}) type({type.value}) thread({thread}) exec_num({exec_idx})"
+                                    info = f"[INFO] {app_name}: run_id({run_id}) type({type.value}) thread({thread}) exec_num({exec_idx})"
                                 else:
-                                    info = f"[INFO] {app}: run_id({run_id}) type({type.value}) approx_tech({approx_tech}) approx_level({approx_level}) thread({thread}) exec_num({exec_idx})"
+                                    info = f"[INFO] {app_name}: run_id({run_id}) type({type.value}) approx_tech({approx_tech}) approx_level({approx_level}) thread({thread}) exec_num({exec_idx})"
 
                                 print(info)
-                                (result, perf_path) = benchmark_func[app]["exec"](
+                                (result, perf_path) = benchmark_func[app_name]["exec"](
                                     conn,
-                                    app_id,
+                                    app_name,
+                                    app_version,
                                     run_id,
                                     type,
                                     thread,
@@ -826,14 +921,14 @@ def run(applications: pd.DataFrame):
                                     approx_level,
                                 )
 
-                                update_run_end_time(conn, run_id)
+                                update_run_end_time(conn, run_id, app_name, app_version)
                                 if result.returncode != 0:
                                     log_run_error(
                                         conn, run_id, result.returncode, result.stderr
                                     )
                                     exit(-1)
 
-                                benchmark_func[app]["output"](
+                                benchmark_func[app_name]["output"](
                                     result.stdout, run_id, exec_idx, type, thread
                                 )
                                 save_performance(conn, run_id, perf_path)
@@ -846,7 +941,7 @@ def run(applications: pd.DataFrame):
 if __name__ == "__main__":
     with get_database_connection() as conn:
         applications = conn.execute(
-            "SELECT DISTINCT id, name FROM benchmark WHERE canceled = false AND name='2mm';"
+            "SELECT DISTINCT name, version FROM benchmark WHERE canceled = false AND name='2mm';"
         ).df()
 
     # setup_environment(applications)
