@@ -1,107 +1,94 @@
 INSTALL json;
 LOAD json;
 
-CREATE TABLE IF NOT EXISTS "server" (
+CREATE TABLE IF NOT EXISTS "Server" (
   "hostname" VARCHAR PRIMARY KEY,
-
+  
   "cpu_description" VARCHAR NOT NULL,
-  "hertz" DECIMAL(3, 2) NOT NULL,
-  "physical_cores" BIGINT NOT NULL,
-  "num_threads" BIGINT NOT NULL,
-  "gb_ram" FLOAT NOT NULL,
-  "operating_system" VARCHAR NOT NULL
+  "hertz" DECIMAL(3,2) NOT NULL,
+  "ram_memory" INTEGER NOT NULL,
+  "operating_system" VARCHAR NOT NULL,
 );
 
-CREATE TABLE IF NOT EXISTS "benchmark" (
-  "name" VARCHAR NOT NULL,
-  "version" BIGINT NOT NULL,
-
+CREATE TABLE IF NOT EXISTS "Benchmark" (
+  "name" VARCHAR ,
+  "version" INTEGER,
+  
   "description" VARCHAR,
   "canceled" BOOLEAN NOT NULL DEFAULT false,
 
   PRIMARY KEY ("name", "version")
 );
 
-CREATE TABLE IF NOT EXISTS "input" (
-  "benchmark_name" VARCHAR,
-  "benchmark_version" BIGINT NOT NULL,
+CREATE TABLE IF NOT EXISTS "BenchmarkInput" (
+  "name" VARCHAR,
+  "version" INTEGER,
+  
+  "input" JSON,
 
-  "binary" BOOLEAN,
-  "arguments" JSON,
-
-  PRIMARY KEY ("benchmark_name", "benchmark_version"),
-  FOREIGN KEY ("benchmark_name", "benchmark_version")
-  REFERENCES "benchmark" ("name", "version")
+  PRIMARY KEY ("name", "version"),
+  FOREIGN KEY ("name", "version")
+    REFERENCES "Benchmark" ("name", "version")
 );
 
-CREATE TABLE IF NOT EXISTS "run" (
-  "id" BIGINT NOT NULL,
-  "benchmark_name" VARCHAR NOT NULL,
-  "benchmark_version" BIGINT NOT NULL,
-
-  "server_name" VARCHAR NOT NULL,
-  "thread" BIGINT NOT NULL,
-  CHECK ("thread" >= 1),
+CREATE SEQUENCE IF NOT EXISTS "ExecutionSeq" START 1;
+CREATE TABLE IF NOT EXISTS "Execution" (
+	"id" BIGINT DEFAULT nextval('ExecutionSeq'),
 
   "type" VARCHAR NOT NULL,
-  "approx_technique" VARCHAR,
-  "approx_rate" DOUBLE,
-  CHECK ("type" IN ('common', 'omp', 'approx')),
+  "approx_rate" INTEGER,
   CHECK (
-    ("type" != 'approx')
-    OR ("approx_technique" IS NOT NULL AND "approx_rate" IS NOT NULL)
-  ),
-  CHECK (
-    ("type" = 'approx')
-    OR ("approx_technique" IS NULL AND "approx_rate" IS NULL)
+    ("type" != 'common')
+    OR ("approx_rate" IS NOT NULL)
   ),
 
-  "start_time" TIMESTAMP,
+  "exec_num" INTEGER NOT NULL,
+  "threads" INTEGER NOT NULL,
+  "start_time" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "end_time" TIMESTAMP,
 
-  PRIMARY KEY ("id", "benchmark_name", "benchmark_version"),
-  FOREIGN KEY ("benchmark_name", "benchmark_version")
-  REFERENCES "benchmark" ("name", "version"),
-  FOREIGN KEY ("server_name")
-  REFERENCES "server" ("hostname")
+  "server" VARCHAR NOT NULL,
+  "bench_name" VARCHAR NOT NULL,
+  "bench_version" INTEGER NOT NULL,
+  
+  PRIMARY KEY ("id"),
+  FOREIGN KEY ("server")
+    REFERENCES "Server" ("hostname"),
+  FOREIGN KEY ("bench_name", "bench_version")
+    REFERENCES "Benchmark" ("name", "version")
 );
 
-CREATE TABLE IF NOT EXISTS "performance_stat" (
-  "run_id" BIGINT,
-  "benchmark_name" VARCHAR NOT NULL,
-  "benchmark_version" BIGINT NOT NULL,
-  "metric_name" VARCHAR,
+CREATE TABLE IF NOT EXISTS "ExecError" (
+	"exec_id" BIGINT,
 
-  "metric_value" DOUBLE NOT NULL,
-
-  PRIMARY KEY ("run_id", "benchmark_name", "benchmark_version", "metric_name"),
-  FOREIGN KEY ("run_id", "benchmark_name", "benchmark_version")
-  REFERENCES "run" ("id", "benchmark_name", "benchmark_version")
+  "errno" INTEGER NOT NULL,
+  "code" VARCHAR NOT NULL,
+  "description" VARCHAR,
+  
+  PRIMARY KEY ("exec_id"),
+  FOREIGN KEY ("exec_id")
+    REFERENCES "Execution" ("id"),
 );
 
-CREATE TABLE IF NOT EXISTS "run_error" (
-  "run_id" BIGINT,
-  "benchmark_name" VARCHAR NOT NULL,
-  "benchmark_version" BIGINT NOT NULL,
+CREATE TABLE IF NOT EXISTS "Performance" (
+	"name" VARCHAR,
+	"exec_id" BIGINT,
 
-  "error_num" BIGINT NOT NULL,
-  "error_code" VARCHAR,
-  "error_string" VARCHAR,
+  "value" DOUBLE NOT NULL,
 
-  PRIMARY KEY ("run_id", "benchmark_name", "benchmark_version"),
-  FOREIGN KEY ("run_id", "benchmark_name", "benchmark_version")
-  REFERENCES "run" ("id", "benchmark_name", "benchmark_version")
+  PRIMARY KEY ("name", "exec_id"),
+  FOREIGN KEY ("exec_id")
+    REFERENCES "Execution" ("id"),
 );
 
-CREATE TABLE IF NOT EXISTS "quality_metrics" (
-  "run_id" BIGINT,
-  "benchmark_name" VARCHAR NOT NULL,
-  "benchmark_version" BIGINT NOT NULL,
+CREATE TABLE IF NOT EXISTS "QualityMetrics" (
+	"name" VARCHAR,
+	"exec_id" BIGINT,
 
-  "metric_name" VARCHAR NOT NULL,
-  "metric_value" DOUBLE NOT NULL,
+  "value" DOUBLE NOT NULL,
 
-  PRIMARY KEY ("run_id", "benchmark_name", "benchmark_version"),
-  FOREIGN KEY ("run_id", "benchmark_name", "benchmark_version")
-  REFERENCES "run" ("id", "benchmark_name", "benchmark_version")
+  PRIMARY KEY ("name", "exec_id"),
+  FOREIGN KEY ("exec_id")
+    REFERENCES "Execution" ("id"),
 );
+
