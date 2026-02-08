@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import sys
 import os
 import duckdb
@@ -161,15 +162,46 @@ def save_metric(conn, group_id: int, exec_id: int, name: str, value: float):
 # ============================================================
 
 
+def load_file_type(path: str) -> np.ndarray:
+    ext = os.path.splitext(path)[1].lower()
+
+    df = []
+    if ext == ".parquet":
+        df = duckdb.read_parquet(path).df()
+    elif ext == ".csv":
+        df = pd.read_csv(path, header=None)
+    elif ext in (".pkl", ".pickle"):
+        df = pd.read_pickle(path)
+    else:
+        print(f"[ERROR] {path} has a unsuportted extension type.")
+        sys.exit(-1)
+
+    return df.to_numpy(dtype=np.float64)
+
+
 def mape(reference: str, prediction: str):
-    ref = duckdb.read_parquet(reference).df()
-    pred = duckdb.read_parquet(prediction).df()
-    ref_vals, pred_vals = (
-        ref.to_numpy(dtype=np.float64),
-        pred.to_numpy(dtype=np.float64),
-    )
+    ref_vals = load_file_type(reference)
+    pred_vals = load_file_type(prediction)
+    if ref_vals.shape != pred_vals.shape:
+        print(
+            f"[ERROR] Shape mismatch (reference shape) {ref_vals.shape} != {pred_vals.shape} (prediction shape)."
+        )
+        sys.exit(-1)
+
     mask = ref_vals != 0
     return np.mean(np.abs((ref_vals[mask] - pred_vals[mask]) / ref_vals[mask])) * 100.0
+
+
+def rmse(reference: str, prediction: str):
+    ref_vals = load_file_type(reference)
+    pred_vals = load_file_type(prediction)
+    if ref_vals.shape != pred_vals.shape:
+        print(
+            f"[ERROR] Shape mismatch (reference shape) {ref_vals.shape} != {pred_vals.shape} (prediction shape)."
+        )
+        sys.exit(-1)
+
+    return np.sqrt(np.mean((ref_vals - pred_vals) ** 2))
 
 
 def ssim(reference: str, prediction: str):
@@ -180,12 +212,27 @@ def ssim(reference: str, prediction: str):
     return similarity(ref_gray, pred_gray)
 
 
-def metric(conn, gid: int, exec_id: int, metric: str, reference: str, prediction: str):
+def metric(
+    conn,
+    gid: int,
+    exec_id: int,
+    metric: str,
+    reference: str,
+    prediction: str,
+):
     match metric:
         case "MAPE":
-            save_metric(conn, gid, exec_id, metric, float(mape(reference, prediction)))
+            save_metric(
+                conn,
+                gid,
+                exec_id,
+                metric,
+                float(mape(reference, prediction)),
+            )
         case "SSIM":
             save_metric(conn, gid, exec_id, metric, float(ssim(reference, prediction)))
+        case "RMSE":
+            save_metric(conn, gid, exec_id, metric, float(rmse(reference, prediction)))
         case _:
             print(f"[ERROR] {metric} is currently not supported")
 
@@ -313,29 +360,29 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
                             baseline_id = id
                             continue
 
-                        mtype = variant["metric"]["type"]
-                        pred = (
-                            variant["metric"]["prediction"]
-                            .replace("$PATH", bench_path)
-                            .replace("$APPROX_RATE", str(rate))
-                            .replace("$NUM_THREADS", str(t))
-                            .replace("$ID_GROUP_BASE", str(baseline_gid))
-                            .replace("$ID_RUN", str(id))
-                            .replace("$ID_GROUP", str(gid))
-                            .replace("$ID_BASE", str(baseline_id))
-                        )
-                        ref = (
-                            variant["metric"]["reference"]
-                            .replace("$PATH", bench_path)
-                            .replace("$APPROX_RATE", str(rate))
-                            .replace("$NUM_THREADS", str(t))
-                            .replace("$ID_GROUP_BASE", str(baseline_gid))
-                            .replace("$ID_RUN", str(id))
-                            .replace("$ID_GROUP", str(gid))
-                            .replace("$ID_BASE", str(baseline_id))
-                        )
-
-                        metric(conn, gid, id, mtype, pred, ref)
+                        if variant.get("metric") is not None:
+                            mtype = variant["metric"]["type"]
+                            pred = (
+                                variant["metric"]["prediction"]
+                                .replace("$PATH", bench_path)
+                                .replace("$APPROX_RATE", str(rate))
+                                .replace("$NUM_THREADS", str(t))
+                                .replace("$ID_GROUP_BASE", str(baseline_gid))
+                                .replace("$ID_RUN", str(id))
+                                .replace("$ID_GROUP", str(gid))
+                                .replace("$ID_BASE", str(baseline_id))
+                            )
+                            ref = (
+                                variant["metric"]["reference"]
+                                .replace("$PATH", bench_path)
+                                .replace("$APPROX_RATE", str(rate))
+                                .replace("$NUM_THREADS", str(t))
+                                .replace("$ID_GROUP_BASE", str(baseline_gid))
+                                .replace("$ID_RUN", str(id))
+                                .replace("$ID_GROUP", str(gid))
+                                .replace("$ID_BASE", str(baseline_id))
+                            )
+                            metric(conn, gid, id, mtype, pred, ref)
 
 
 def run_plan(conn, plan_path: str):

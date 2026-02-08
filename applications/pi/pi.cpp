@@ -40,6 +40,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <cstdint>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -47,7 +48,6 @@
 #if _OPENMP
 #include <omp.h>
 #endif // _OPENMP
-
 
 struct RandState {
   uint64_t seed[2];
@@ -98,14 +98,19 @@ double piMonteCarlo(uint64_t numIterations) {
 }
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
+  if (argc < 3) {
     std::cerr << "Invalid number of arguments!\n";
-    std::cerr << "Usage: " << argv[0] << " <num_iterations>\n";
+    std::cerr << "Usage: " << argv[0] << " <num_iterations> <file_output>\n";
     return -1;
   }
 
   uint64_t numIterations = std::stoul(argv[1]);
-  std::cout << piMonteCarlo(numIterations);
+  std::ofstream outfile(argv[2], std::ios::out | std::ios::binary);
+  if (!outfile) {
+    std::cerr << "Error: Could not open file" << argv[2] << "for writing!\n";
+    return 1;
+  }
 
+  outfile << piMonteCarlo(numIterations);
   return 0;
 }
