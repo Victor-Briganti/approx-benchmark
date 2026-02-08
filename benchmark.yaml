@@ -1,0 +1,30 @@
+experiment:
+  server:
+    hostname: Armagedon
+    cpu_description: i7-4790 Intel Core
+    hertz: 3.60
+    cores: 4
+    threads: 8
+    ram_memory: 32
+    operating_system: Ubuntu 22.04.4 LTS
+  benchmarks:
+    - name: '2mm' 
+      version: 0
+      path: ./applications/2mm
+      setup: 'mkdir -p $PATH/output'
+      description: 'Multiply two matrixes with this result multiply with another matrix and output the result as a csv like structure (without the header).'
+  executions:
+    - bench_name: 2mm
+      bench_version: 0
+      num_executions: 1
+      num_threads: [1]
+      inputs:
+        matrix_size: 256
+        output: output.csv
+      variants:
+        - type: common
+          compile: 'make -C $PATH'
+          pos-processing: "duckdb -c \"COPY (SELECT * FROM read_csv_auto('output.csv')) TO '$PATH/output/output_$ID_RUN.parquet' (FORMAT PARQUET);\" && rm output.csv"
+          baseline: true
+          env_vars:
+            OMP_PROC_BIND: "TRUE"

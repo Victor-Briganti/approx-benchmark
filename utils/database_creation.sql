@@ -1,6 +1,16 @@
 INSTALL json;
 LOAD json;
 
+CREATE SEQUENCE IF NOT EXISTS "ExperimentSeq" START 1;
+CREATE TABLE IF NOT EXISTS "Experiment" (
+  "id" BIGINT DEFAULT nextval('ExperimentSeq'),
+
+  "yaml_snapshot" TEXT NOT NULL,
+  "commit" CHAR(40) NOT NULL,
+
+  PRIMARY KEY ("id")
+);
+
 CREATE TABLE IF NOT EXISTS "Server" (
   "hostname" VARCHAR PRIMARY KEY,
   
@@ -16,21 +26,12 @@ CREATE TABLE IF NOT EXISTS "Benchmark" (
   "name" VARCHAR ,
   "version" INTEGER,
   
+  "path" VARCHAR NOT NULL,
+  "setup" VARCHAR,
   "description" VARCHAR,
   "canceled" BOOLEAN NOT NULL DEFAULT false,
 
   PRIMARY KEY ("name", "version")
-);
-
-CREATE TABLE IF NOT EXISTS "BenchmarkInput" (
-  "name" VARCHAR,
-  "version" INTEGER,
-  
-  "input" JSON,
-
-  PRIMARY KEY ("name", "version"),
-  FOREIGN KEY ("name", "version")
-    REFERENCES "Benchmark" ("name", "version")
 );
 
 CREATE SEQUENCE IF NOT EXISTS "ExecutionSeq" START 1;
@@ -40,27 +41,50 @@ CREATE TABLE IF NOT EXISTS "Execution" (
   "type" VARCHAR NOT NULL,
   "approx_rate" INTEGER,
   CHECK (
-    ("type" != 'common')
-    OR ("approx_rate" IS NOT NULL)
+     ("type" = 'common') OR ("approx_rate" IS NOT NULL)
   ),
 
+  "compile_command" VARCHAR,
   "exec_num" INTEGER NOT NULL,
-  "threads" INTEGER NOT NULL,
+  "num_threads" INTEGER NOT NULL,
   "start_time" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "end_time" TIMESTAMP,
 
   "server" VARCHAR NOT NULL,
   "bench_name" VARCHAR NOT NULL,
   "bench_version" INTEGER NOT NULL,
+  "exp_id" BIGINT NOT NULL,
   
   PRIMARY KEY ("id"),
   FOREIGN KEY ("server")
     REFERENCES "Server" ("hostname"),
   FOREIGN KEY ("bench_name", "bench_version")
-    REFERENCES "Benchmark" ("name", "version")
+    REFERENCES "Benchmark" ("name", "version"),
+  FOREIGN KEY ("exp_id")
+    REFERENCES "Experiment" ("id")
 );
 
-CREATE TABLE IF NOT EXISTS "ExecError" (
+CREATE TABLE IF NOT EXISTS "ExecutionInput" (
+  "exec_id" BIGINT,
+
+  "input" JSON,
+
+  PRIMARY KEY ("exec_id"),
+  FOREIGN KEY ("exec_id")
+    REFERENCES "Execution" ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "ExecutionEnv" (
+	"exec_id" BIGINT,
+  "name" VARCHAR,
+  "value" VARCHAR,
+  
+  PRIMARY KEY ("exec_id", "name", "value"),
+  FOREIGN KEY ("exec_id")
+    REFERENCES "Execution" ("id"),
+);
+
+CREATE TABLE IF NOT EXISTS "ExecutionError" (
 	"exec_id" BIGINT,
 
   "errno" INTEGER NOT NULL,
