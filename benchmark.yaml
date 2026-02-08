@@ -18,6 +18,11 @@ experiment:
       path: ./applications/correlation
       setup: "mkdir -p $PATH/output"
       description: "Calculate the correlation between all columns of a csv file."
+    - name: "deriche"
+      version: 0
+      path: ./applications/deriche
+      setup: "mkdir -p $PATH/output"
+      description: "Deriche is a edge detector algorithm based on the canny edge detector algorithm."
   executions:
     - bench_name: 2mm
       bench_version: 0
@@ -63,5 +68,29 @@ experiment:
             type: MAPE
             reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
             prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+    - bench_name: deriche
+      bench_version: 0
+      num_executions: 10
+      num_threads: [1, 2, 4, 8, 16]
+      inputs:
+        alpha: 0.5
+        input: $PATH/input/sunflower.jpg
+        output: output.jpg
+      variants:
+        - type: common
+          compile: "make -C $PATH"
+          pos-processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
+          baseline: true
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+        - type: omp
+          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
+          pos-processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
+          metric:
+            type: SSIM
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.jpg
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg
           env_vars:
             OMP_PROC_BIND: "TRUE"

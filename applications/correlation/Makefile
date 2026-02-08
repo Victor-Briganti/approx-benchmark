@@ -13,4 +13,4 @@ omp:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) correlation.cpp -o correlation
 
 clean:
-	@rm -rf *.a *.csv
+	@rm -rf correlation *.csv
