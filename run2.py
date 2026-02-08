@@ -2,6 +2,7 @@ import sys
 import os
 import duckdb
 import yaml
+import json
 import subprocess
 from typing import Dict, List, Tuple, Optional
 
@@ -174,6 +175,16 @@ def save_exec_input(conn, exec_id, input: Dict[str, any]):
     )
 
 
+def save_performance(conn, run_id: int, name: str, value: int):
+    conn.execute(
+        """
+        INSERT INTO Performance(exec_id, name, value)
+        VALUES (?, ?, ?);
+        """,
+        (run_id, name, value),
+    )
+
+
 def save_exec_envs(conn, exec_id, envs: Dict[str, any]):
     for env, value in envs.items():
         conn.execute(
@@ -221,15 +232,18 @@ def make(cmd: str):
 
 
 def run(conn, run_id: int, exec_info: Dict[str, any]):
-    cmd = f"$PATH/{exec_info['bench_name']}".replace(
+    cmd = '/usr/bin/time -f \'{"elapsed": %e, "user": %U, "sys": %S}\''
+    cmd = f'{cmd} perf stat -j'
+    cmd = f"{cmd} $PATH/{exec_info['bench_name']}".replace(
         "$PATH", exec_info["bench_path"]
     )
 
     for _, value in exec_info["inputs"].items():
         cmd = f"{cmd} {str(value).replace('$PATH', exec_info['bench_path'])}"
 
+    result = None
     try:
-        subprocess.run(
+        result = subprocess.run(
             cmd,
             shell=True,
             executable="/bin/bash",
@@ -244,6 +258,16 @@ def run(conn, run_id: int, exec_info: Dict[str, any]):
         print(f"[ERROR] Return code: {e.returncode}")
         print(f"[ERROR] STDERR:\n{e.stderr}")
         sys.exit(1)
+
+    lines = result.stderr.strip().splitlines()
+    records = [json.loads(line) for line in lines]
+    for i, r in enumerate(records):
+        if i == len(records) - 1:
+            save_performance(conn, run_id, "elapsed", r["elapsed"])
+            save_performance(conn, run_id, "user", r["user"])
+            save_performance(conn, run_id, "sys", r["sys"])
+        else:
+            save_performance(conn, run_id, r["event"], r["counter-value"])
 
 
 def run_pos_processing(cmd: str):
@@ -280,6 +304,8 @@ def execution(conn, executions: List[Dict[str, any]], server: str):
                             "bench_name": exec["bench_name"],
                             "bench_version": exec["bench_version"],
                         }
+                        make(variant["compile"].replace("$PATH", bench_path))
+
                         run_id = save_execution(conn, exec_info)[0]
                         save_exec_input(conn, run_id, exec["inputs"])
                         save_exec_envs(conn, run_id, variant["env_vars"])
