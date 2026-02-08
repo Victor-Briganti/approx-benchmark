@@ -64,6 +64,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <fstream>
 #include <iostream>
 #include <unistd.h>
 
@@ -73,10 +74,10 @@
 // Helper Functions
 //===------------------------------------------------------------------------===
 
-void output_matrix(uint64_t *&matrix, size_t size) {
-  for (int y = 0; y < size; y++) {
-    for (int x = 0; x < size; x++) {
-      std::cout << matrix[y * size + x] << (x + 1 == size ? '\n' : ',');
+void output_matrix(uint64_t *&matrix, size_t size, std::ostream &os) {
+  for (size_t y = 0; y < size; y++) {
+    for (size_t x = 0; x < size; x++) {
+      os << matrix[y * size + x] << (x + 1 == size ? '\n' : ',');
     }
   }
 }
@@ -105,13 +106,18 @@ size_t block_size(size_t matrixSize) {
 //===------------------------------------------------------------------------===
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
+  if (argc < 3) {
     std::cerr << "Invalid number of arguments!\n";
-    std::cerr << "Usage: " << argv[0] << " <matrix_size>\n";
+    std::cerr << "Usage: " << argv[0] << " <matrix_size> <output_file>\n";
     return -1;
   }
 
   size_t matrixSize = atol(argv[1]);
+  std::ofstream ofs(argv[2]);
+  if (!ofs) {
+    std::cerr << "Failed to open output file: " << argv[2] << '\n';
+    return -1;
+  }
 
   uint64_t *A = nullptr;
   uint64_t *B = nullptr;
@@ -166,6 +172,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  output_matrix(E, matrixSize);
+  output_matrix(E, matrixSize, ofs);
   return 0;
 }
