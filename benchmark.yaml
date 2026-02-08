@@ -28,6 +28,11 @@ experiment:
       path: ./applications/jacobi2d
       setup: "mkdir -p $PATH/output"
       description: "Performs a 2D Jacobi relaxation method on a square grid. Iteratively updates each cell in the grid to the average of its four neighbors. Used for solving partial differential equations such as Laplace''s equation."
+    - name: "mandelbrot"
+      version: 0
+      path: ./applications/mandelbrot
+      setup: "mkdir -p $PATH/output"
+      description: "Calculates the mandelbrot set and ouputs it as a 1-bit P4 portable bitmap image."
   executions:
     - bench_name: 2mm
       bench_version: 0
@@ -121,5 +126,28 @@ experiment:
             type: MAPE
             reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
             prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+    - bench_name: mandelbrot
+      bench_version: 0
+      num_executions: 10
+      num_threads: [1, 2, 4, 8, 16]
+      inputs:
+        image_size: 2048
+        output_img: output.bmp
+      variants:
+        - type: common
+          compile: "make -C $PATH"
+          pos-processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+          baseline: true
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+        - type: omp
+          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
+          pos-processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+          metric:
+            type: SSIM
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.bmp
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp
           env_vars:
             OMP_PROC_BIND: "TRUE"

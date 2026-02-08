@@ -46,6 +46,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <fstream>
 #include <iostream>
 #include <unistd.h>
 #include <vector>
@@ -110,15 +111,20 @@ inline bool mandelbrot(const Complex &c) {
 //===------------------------------------------------------------------------===
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
+  if (argc < 3) {
     std::cerr << "Invalid number of arguments!\n";
-    std::cerr << "Usage: " << argv[0] << " <image_size>\n";
+    std::cerr << "Usage: " << argv[0] << " <image_size> <output_img>\n";
     return -1;
   }
 
   // Get the size of the image as a multiple of 8
   size_t imageSize = (atol(argv[1]) + 7) / 8 * 8;
   std::vector<uint8_t> pixels(imageSize * imageSize / 8, 0x00);
+  std::ofstream outFile(argv[2], std::ios::out | std::ios::binary);
+  if (!outFile) {
+    std::cerr << "Error: Could not open file" << argv[2] << "for writing!\n";
+    return 1;
+  }
 
   double scaleX = (REAL_FINAL_RANGE - REAL_INIT_RANGE) / imageSize;
   double scaleY = (IMAG_FINAL_RANGE - IMAG_INIT_RANGE) / imageSize;
@@ -147,9 +153,9 @@ int main(int argc, char **argv) {
     pixels[pixel] = byte;
   }
 
-  // Write the image to the file
-  std::cout << "P4\n" << imageSize << " " << imageSize << "\n";
-  std::cout.write(reinterpret_cast<char *>(pixels.data()), pixels.size());
-  std::cout.flush();
+  outFile << "P4\n" << imageSize << " " << imageSize << "\n";
+  outFile.write(reinterpret_cast<const char *>(pixels.data()), pixels.size());
+  outFile.flush();
+  outFile.close();
   return 0;
 }
