@@ -1,12 +1,12 @@
 experiment:
   server:
-    hostname: Armagedon
-    cpu_description: i7-4790 Intel Core
-    hertz: 3.60
-    cores: 4
-    threads: 8
-    ram_memory: 32
-    operating_system: Ubuntu 22.04.4 LTS
+    hostname: thinkpad
+    cpu_description: AMD Ryzen 5 5500U
+    hertz: 2.1
+    cores: 6
+    threads: 12
+    ram_memory: 16
+    operating_system: Ubuntu 25.04
   benchmarks:
     - name: '2mm' 
       version: 0
@@ -24,7 +24,16 @@ experiment:
       variants:
         - type: common
           compile: 'make -C $PATH'
-          pos-processing: "duckdb -c \"COPY (SELECT * FROM read_csv_auto('output.csv')) TO '$PATH/output/output_$ID_RUN.parquet' (FORMAT PARQUET);\" && rm output.csv"
+          pos-processing: "duckdb -c \"COPY (SELECT * FROM read_csv_auto('output.csv')) TO '$PATH/output/output_$ID_RUN.parquet' (FORMAT PARQUET);\" && rm -f output.csv"
           baseline: true
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+        - type: omp
+          compile: 'make NUM_THREADS=$NUM_THREADS -C $PATH omp'
+          pos-processing: "duckdb -c \"COPY (SELECT * FROM read_csv_auto('output.csv')) TO '$PATH/output/output_$ID_RUN.parquet' (FORMAT PARQUET);\" && rm -f output.csv"
+          metric:
+            type: MAPE
+            reference: $PATH/output/output_$ID_BASE.parquet
+            prediction: $PATH/output/output_$ID_RUN.parquet
           env_vars:
             OMP_PROC_BIND: "TRUE"

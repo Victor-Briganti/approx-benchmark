@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 import sys
 import os
 import duckdb
@@ -5,32 +7,6 @@ import yaml
 import json
 import subprocess
 from typing import Dict, List, Tuple, Optional
-
-
-# ============================================================
-# Utils
-# ============================================================
-
-
-def replace_variables(input: str, list_vars: Dict[str, str]):
-    return ""
-
-
-# ============================================================
-# SQL Search
-# ============================================================
-
-
-def select_benchmark(
-    conn, name: str, version: int
-) -> Optional[Tuple[str, int, str]]:
-    return conn.execute(
-        """
-        SELECT name, version, path FROM Benchmark WHERE name = ? AND version = ?;
-        """,
-        (name, version),
-    ).fetchone()
-
 
 # ============================================================
 # Bookeping
@@ -93,6 +69,17 @@ def save_server(conn, server: Dict[str, any]):
         print(
             f"[INFO] Server {server['hostname']} already exists on the system"
         )
+
+
+def select_benchmark(
+    conn, name: str, version: int
+) -> Optional[Tuple[str, int, str]]:
+    return conn.execute(
+        """
+        SELECT name, version, path FROM Benchmark WHERE name = ? AND version = ?;
+        """,
+        (name, version),
+    ).fetchone()
 
 
 def save_benchmarks(conn, benchmarks: List[Dict[str, any]]):
@@ -217,6 +204,42 @@ def update_exec_endtime(conn, id: int):
     )
 
 
+def save_metric(conn, run_id: int, name: str, value: float):
+    conn.execute(
+        """
+        INSERT INTO QualityMetrics(exec_id, name, value)
+        VALUES (?, ?, ?);
+        """,
+        (run_id, name, value),
+    )
+
+
+# ============================================================
+# Metrics
+# ============================================================
+
+
+def mape(reference: str, prediction: str):
+    ref = duckdb.read_parquet(reference).df()
+    pred = duckdb.read_parquet(prediction).df()
+
+    ref_vals = ref.to_numpy(dtype=np.float64)
+    pred_vals = pred.to_numpy(dtype=np.float64)
+
+    # Avoid division by zero
+    mask = ref_vals != 0
+    return np.mean(np.abs((ref_vals[mask] - pred_vals[mask]) / ref_vals[mask])) * 100.0
+
+
+def run_metric(conn, run_id: int, metric: str, reference: str, prediction: str):
+    match metric:
+        case "MAPE":
+            save_metric(conn, run_id, "MAPE", mape(reference, prediction))
+        case _:
+            print(f"[ERROR] Metric {metric} currently not supported")
+            sys.exit(-1)
+
+
 # ============================================================
 # Execution
 # ============================================================
@@ -233,7 +256,7 @@ def make(cmd: str):
 
 def run(conn, run_id: int, exec_info: Dict[str, any]):
     cmd = '/usr/bin/time -f \'{"elapsed": %e, "user": %U, "sys": %S}\''
-    cmd = f'{cmd} perf stat -j'
+    cmd = f"{cmd} perf stat -j"
     cmd = f"{cmd} $PATH/{exec_info['bench_name']}".replace(
         "$PATH", exec_info["bench_path"]
     )
@@ -267,6 +290,9 @@ def run(conn, run_id: int, exec_info: Dict[str, any]):
             save_performance(conn, run_id, "user", r["user"])
             save_performance(conn, run_id, "sys", r["sys"])
         else:
+            if r.get("event", None) is None:
+                continue
+            
             save_performance(conn, run_id, r["event"], r["counter-value"])
 
 
@@ -290,9 +316,21 @@ def execution(conn, executions: List[Dict[str, any]], server: str):
             )
             return
 
-        for thread in exec["num_threads"]:
-            for num_exec in range(exec["num_executions"]):
-                for variant in exec["variants"]:
+        if sum(1 for v in exec["variants"] if "baseline" in v) > 1:
+            print("[ERROR] There should be only one baseline per variant")
+            sys.exit(-1)
+
+        id_baseline = None
+        for variant in exec["variants"]:
+            num_threads = exec["num_threads"]
+            num_executions = exec["num_executions"]
+            base = variant.get("baseline", None)
+            if base is not None:
+                num_threads = [1]
+                num_executions = 1
+
+            for thread in num_threads:
+                for num_exec in range(num_executions):
                     for approx_rate in variant.get("approx_rates", [None]):
                         exec_info = {
                             "type": variant["type"],
@@ -306,22 +344,45 @@ def execution(conn, executions: List[Dict[str, any]], server: str):
                         }
                         make(variant["compile"].replace("$PATH", bench_path))
 
-                        run_id = save_execution(conn, exec_info)[0]
-                        save_exec_input(conn, run_id, exec["inputs"])
-                        save_exec_envs(conn, run_id, variant["env_vars"])
+                        id_run = save_execution(conn, exec_info)[0]
+                        save_exec_input(conn, id_run, exec["inputs"])
+                        save_exec_envs(conn, id_run, variant["env_vars"])
 
                         exec_info["inputs"] = exec["inputs"]
                         exec_info["envs"] = variant["env_vars"]
                         exec_info["bench_path"] = bench_path
-                        run(conn, run_id, exec_info)
-                        update_exec_endtime(conn, run_id)
+                        run(conn, id_run, exec_info)
+                        update_exec_endtime(conn, id_run)
 
                         pos_processing = variant.get("pos-processing", None)
                         if pos_processing is not None:
                             pos_processing = pos_processing.replace(
                                 "$PATH", bench_path
-                            ).replace("$ID_RUN", str(run_id))
+                            ).replace("$ID_RUN", str(id_run))
                             run_pos_processing(pos_processing)
+
+                        if base is not None:
+                            id_baseline = id_run
+                            continue
+
+                        if id_baseline is not None:
+                            reference = (
+                                variant["metric"]["reference"]
+                                .replace("$PATH", bench_path)
+                                .replace("$ID_BASE", str(id_baseline))
+                            )
+                            prediction = (
+                                variant["metric"]["prediction"]
+                                .replace("$PATH", bench_path)
+                                .replace("$ID_RUN", str(id_run))
+                            )
+                            run_metric(
+                                conn,
+                                id_run,
+                                variant["metric"]["type"],
+                                reference,
+                                prediction,
+                            )
 
 
 def run_plan(conn, plan_path: str):
