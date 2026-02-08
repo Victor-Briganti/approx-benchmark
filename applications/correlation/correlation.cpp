@@ -76,6 +76,7 @@
 
 #include <cmath>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -108,7 +109,8 @@ double correlation(double *x, double *y, int rows) {
 double *correlationMatrix(double **&data, int columns, int rows) {
   double *matrix = new double[columns * rows]();
 
-#pragma omp parallel for collapse(2) shared(matrix) schedule(static) num_threads(NUM_THREADS)
+#pragma omp parallel for collapse(2) shared(matrix) schedule(static)           \
+    num_threads(NUM_THREADS)
   for (int i = 0; i < columns; i++) {
     for (int j = i; j < columns; j++) {
       double r = (j == i) ? 1.0 : correlation(data[i], data[j], rows);
@@ -162,11 +164,14 @@ double **readData(std::ifstream &file, int columns, int rows) {
   return data;
 }
 
-void print_matrix(double *matrix, int columns) {
+void save_matrix_to_file(double *matrix, int columns, std::ofstream &file) {
+  file << std::fixed << std::setprecision(4);
+
   for (int i = 0; i < columns; i++) {
     for (int j = 0; j < columns; j++) {
-      std::cout << matrix[i * columns + j] << (j + 1 == columns ? "\n" : ",");
+      file << matrix[i * columns + j] << (j + 1 == columns ? "" : ",");
     }
+    file << "\n";
   }
 }
 
@@ -175,9 +180,9 @@ void print_matrix(double *matrix, int columns) {
 //===------------------------------------------------------------------------===
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
+  if (argc < 3) {
     std::cerr << "Invalid number of arguments!\n";
-    std::cerr << "Usage: " << argv[0] << " <input_file>\n";
+    std::cerr << "Usage: " << argv[0] << " <input_file> <output_file>\n";
     return -1;
   }
 
@@ -187,11 +192,16 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  std::ofstream outfile(argv[2]);
+  if (!file) {
+    std::cerr << "Could not open file " << argv[2] << "\n";
+    return -1;
+  }
+
   auto [columns, rows] = readDimensions(file);
   double **data = readData(file, columns, rows);
 
   double *matrix = correlationMatrix(data, columns, rows);
-  print_matrix(matrix, columns);
-
+  save_matrix_to_file(matrix, columns, outfile);
   return 0;
 }

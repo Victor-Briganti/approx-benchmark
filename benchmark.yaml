@@ -13,6 +13,11 @@ experiment:
       path: ./applications/2mm
       setup: "mkdir -p $PATH/output"
       description: "Multiply two matrixes with this result multiply with another matrix and output the result as a csv like structure (without the header)."
+    - name: "correlation"
+      version: 0
+      path: ./applications/correlation
+      setup: "mkdir -p $PATH/output"
+      description: "Calculate the correlation between all columns of a csv file."
   executions:
     - bench_name: 2mm
       bench_version: 0
@@ -37,14 +42,26 @@ experiment:
             prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
           env_vars:
             OMP_PROC_BIND: "TRUE"
-        - type: approx
-          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_default"
+    - bench_name: correlation
+      bench_version: 0
+      num_executions: 10
+      num_threads: [1, 2, 4, 8, 16]
+      inputs:
+        input: $PATH/input/input.csv
+        output: output.csv
+      variants:
+        - type: common
+          compile: "make -C $PATH"
           pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
-          approx_rates: [10, 20, 30, 40, 50]
+          baseline: true
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+        - type: omp
+          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
+          pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
             type: MAPE
             reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
             prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
           env_vars:
             OMP_PROC_BIND: "TRUE"
-            OMP_APPROX: "TRUE"
