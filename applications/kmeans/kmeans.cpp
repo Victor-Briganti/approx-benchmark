@@ -104,7 +104,8 @@ float *kmeans_clustering(float *features, int numFeatures, int numPoints,
 
   for (int i = 0; i < iterations; i++) {
     double delta = 0.0f;
-#pragma omp parallel shared(features, centroids, newCentroids, newCentroidsLen) num_threads(NUM_THREADS)
+#pragma omp parallel shared(features, centroids, newCentroids,                 \
+                                newCentroidsLen) num_threads(NUM_THREADS)
     {
 #pragma omp for reduction(+ : delta)                                           \
     reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
@@ -194,10 +195,11 @@ float *readDataset(std::ifstream &file, int numPoints, int numFeatures) {
 //===------------------------------------------------------------------------===
 
 int main(int argc, char **argv) {
-  if (argc < 5) {
+  if (argc < 6) {
     std::cerr << "Invalid number of arguments!\n";
     std::cerr << "Usage: " << argv[0]
-              << " <num_clusters> <iterations> <threshold> <input_file>\n";
+              << " <num_clusters> <iterations> <threshold> <input_file> "
+                 "<output_file>\n";
     return -1;
   }
 
@@ -221,6 +223,12 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  std::ofstream outfile(argv[5]);
+  if (!file) {
+    std::cerr << "Could not open output file " << argv[5] << "\n";
+    return -1;
+  }
+
   auto [numPoints, numFeatures] = readDatasetInfo(file);
   float *features = readDataset(file, numPoints, numFeatures);
 
@@ -229,10 +237,10 @@ int main(int argc, char **argv) {
                                        numClusters, iterations, threshold);
 
   for (int i = 0; i < numClusters; i++) {
-    std::cout << i << ": ";
+    outfile << i << ": ";
     for (int j = 0; j < numFeatures; j++) {
-      std::cout << centroids[i * numFeatures + j]
-                << (j + 1 == numFeatures ? "\n" : ",");
+      outfile << centroids[i * numFeatures + j]
+              << (j + 1 == numFeatures ? "\n" : ",");
     }
   }
 

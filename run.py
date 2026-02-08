@@ -204,6 +204,20 @@ def rmse(reference: str, prediction: str):
     return np.sqrt(np.mean((ref_vals - pred_vals) ** 2))
 
 
+def mcr(reference: str, prediction: str):
+    ref_vals = load_file_type(reference)
+    pred_vals = load_file_type(prediction)
+    if ref_vals.shape != pred_vals.shape:
+        print(
+            f"[ERROR] Shape mismatch (reference shape) {ref_vals.shape} != {pred_vals.shape} (prediction shape)."
+        )
+        sys.exit(-1)
+
+    mismatches = np.sum(ref_vals != pred_vals)
+    total_elements = ref_vals.size
+    return (mismatches / total_elements) * 100.0
+
+
 def ssim(reference: str, prediction: str):
     ref = cv2.imread(reference)
     pred = cv2.imread(prediction)
@@ -233,6 +247,8 @@ def metric(
             save_metric(conn, gid, exec_id, metric, float(ssim(reference, prediction)))
         case "RMSE":
             save_metric(conn, gid, exec_id, metric, float(rmse(reference, prediction)))
+        case "MCR":
+            save_metric(conn, gid, exec_id, metric, float(mcr(reference, prediction)))
         case _:
             print(f"[ERROR] {metric} is currently not supported")
 
