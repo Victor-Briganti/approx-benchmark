@@ -65,6 +65,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <fstream>
 #include <iostream>
 #include <unistd.h>
 
@@ -72,10 +73,10 @@
 // Helper Functions
 //===------------------------------------------------------------------------===
 
-void output_matrix(double *&matrix, size_t size) {
-  for (int y = 0; y < size; y++) {
-    for (int x = 0; x < size; x++) {
-      std::cout << matrix[y * size + x] << (x + 1 == size ? '\n' : ',');
+void output_matrix(double *&matrix, size_t size, std::ostream &os) {
+  for (size_t y = 0; y < size; y++) {
+    for (size_t x = 0; x < size; x++) {
+      os << matrix[y * size + x] << (x + 1 == size ? '\n' : ',');
     }
   }
 }
@@ -103,18 +104,20 @@ void jacobi_2d(int steps, size_t size, double *A, double *B) {
 #pragma omp for collapse(2) schedule(static)
     for (size_t i = 1; i < size - 1; i++) {
       for (size_t j = 1; j < size - 1; j++) {
-        B[i * size + j] = (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
-                           A[(i - 1) * size + j] + A[(i + 1) * size + j]) /
-                          4;
+        B[i * size + j] =
+            (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
+             A[(i - 1) * size + j] + A[(i + 1) * size + j]) /
+            4;
       }
     }
 
 #pragma omp for collapse(2) schedule(static)
     for (size_t i = 1; i < size - 1; i++) {
       for (size_t j = 1; j < size - 1; j++) {
-        A[i * size + j] = (B[i * size + j] + B[i * size + j + 1] + B[i * size + j - 1] +
-                           B[(i - 1) * size + j] + B[(i + 1) * size + j]) /
-                          4;
+        A[i * size + j] =
+            (B[i * size + j] + B[i * size + j + 1] + B[i * size + j - 1] +
+             B[(i - 1) * size + j] + B[(i + 1) * size + j]) /
+            4;
       }
     }
   }
@@ -125,19 +128,25 @@ void jacobi_2d(int steps, size_t size, double *A, double *B) {
 //===------------------------------------------------------------------------===
 
 int main(int argc, char **argv) {
-  if (argc < 3) {
+  if (argc < 4) {
     std::cerr << "Invalid number of arguments!\n";
-    std::cerr << "Usage: " << argv[0] << " <matrix_size> <number_steps>\n";
+    std::cerr << "Usage: " << argv[0]
+              << " <matrix_size> <number_steps> <output_file>\n";
     return -1;
   }
 
   size_t size = atoi(argv[1]);
   int steps = atoi(argv[2]);
+  std::ofstream outfile(argv[3]);
+  if (!outfile) {
+    std::cerr << "Failed to open output file: " << argv[3] << '\n';
+    return -1;
+  }
 
   double *A = init_matrix(size, 2);
   double *B = init_matrix(size, 3);
 
   jacobi_2d(steps, size, A, B);
-  output_matrix(A, size);
+  output_matrix(A, size, outfile);
   return 0;
 }
