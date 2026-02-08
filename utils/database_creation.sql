@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS "Execution" (
   "type" VARCHAR NOT NULL,
   "approx_rate" INTEGER,
   CHECK (
-     ("type" = 'common') OR ("approx_rate" IS NOT NULL)
+     ("type" = 'common') OR ("type" = 'omp') OR ("approx_rate" IS NOT NULL)
   ),
 
   "compile_command" VARCHAR,

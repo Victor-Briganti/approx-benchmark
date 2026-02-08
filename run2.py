@@ -1,19 +1,18 @@
 import numpy as np
-import pandas as pd
 import sys
 import os
 import duckdb
 import yaml
 import json
 import subprocess
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 
 # ============================================================
 # Bookeping
 # ============================================================
 
 
-def save_experiment(conn, plan: Dict[str, any]):
+def save_experiment(conn, plan: Dict[str, Any]):
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         capture_output=True,
@@ -34,7 +33,7 @@ def save_experiment(conn, plan: Dict[str, any]):
     print("[INFO] Saved YAML plan")
 
 
-def save_server(conn, server: Dict[str, any]):
+def save_server(conn, server: Dict[str, Any]):
     hostname = conn.execute(
         """
     SELECT hostname FROM Server WHERE hostname = ?;
@@ -66,14 +65,10 @@ def save_server(conn, server: Dict[str, any]):
             ),
         )
     else:
-        print(
-            f"[INFO] Server {server['hostname']} already exists on the system"
-        )
+        print(f"[INFO] Server {server['hostname']} already exists on the system")
 
 
-def select_benchmark(
-    conn, name: str, version: int
-) -> Optional[Tuple[str, int, str]]:
+def select_benchmark(conn, name: str, version: int) -> Optional[Tuple[str, int, str]]:
     return conn.execute(
         """
         SELECT name, version, path FROM Benchmark WHERE name = ? AND version = ?;
@@ -82,14 +77,12 @@ def select_benchmark(
     ).fetchone()
 
 
-def save_benchmarks(conn, benchmarks: List[Dict[str, any]]):
+def save_benchmarks(conn, benchmarks: List[Dict[str, Any]]):
     for bench in benchmarks:
         query_res = select_benchmark(conn, bench["name"], bench["version"])
 
         if query_res is None:
-            print(
-                f"[INFO] Saving benchmark {bench['name']} v{bench['version']}"
-            )
+            print(f"[INFO] Saving benchmark {bench['name']} v{bench['version']}")
             conn.execute(
                 """
                     INSERT INTO Benchmark(name, 
@@ -119,7 +112,7 @@ def save_benchmarks(conn, benchmarks: List[Dict[str, any]]):
         subprocess.run(cmd, shell=True, executable="/bin/bash", check=True)
 
 
-def save_execution(conn, exec: Dict[str, any]):
+def save_execution(conn, exec: Dict[str, Any]):
     conn.execute(
         """
         INSERT INTO Execution(type, 
@@ -152,7 +145,7 @@ def save_execution(conn, exec: Dict[str, any]):
     ).fetchone()
 
 
-def save_exec_input(conn, exec_id, input: Dict[str, any]):
+def save_exec_input(conn, exec_id, input: Dict[str, Any]):
     conn.execute(
         """
         INSERT INTO ExecutionInput(exec_id, input)
@@ -172,7 +165,7 @@ def save_performance(conn, run_id: int, name: str, value: int):
     )
 
 
-def save_exec_envs(conn, exec_id, envs: Dict[str, any]):
+def save_exec_envs(conn, exec_id, envs: Dict[str, Any]):
     for env, value in envs.items():
         conn.execute(
             """
@@ -234,7 +227,7 @@ def mape(reference: str, prediction: str):
 def run_metric(conn, run_id: int, metric: str, reference: str, prediction: str):
     match metric:
         case "MAPE":
-            save_metric(conn, run_id, "MAPE", mape(reference, prediction))
+            save_metric(conn, run_id, "MAPE", float(mape(reference, prediction)))
         case _:
             print(f"[ERROR] Metric {metric} currently not supported")
             sys.exit(-1)
@@ -254,7 +247,7 @@ def make(cmd: str):
         sys.exit(-1)
 
 
-def run(conn, run_id: int, exec_info: Dict[str, any]):
+def run(conn, run_id: int, exec_info: Dict[str, Any]):
     cmd = '/usr/bin/time -f \'{"elapsed": %e, "user": %U, "sys": %S}\''
     cmd = f"{cmd} perf stat -j"
     cmd = f"{cmd} $PATH/{exec_info['bench_name']}".replace(
@@ -292,25 +285,24 @@ def run(conn, run_id: int, exec_info: Dict[str, any]):
         else:
             if r.get("event", None) is None:
                 continue
-            
+
             save_performance(conn, run_id, r["event"], r["counter-value"])
 
 
 def run_pos_processing(cmd: str):
     result = subprocess.run(cmd, shell=True, executable="/bin/bash", check=True)
     if result.returncode < 0:
-        print(
-            f"[ERROR] Could not execute command {cmd}.\nError: {result.stderr}"
-        )
+        print(f"[ERROR] Could not execute command {cmd}.\nError: {result.stderr}")
         sys.exit(-1)
 
 
-def execution(conn, executions: List[Dict[str, any]], server: str):
+def execution(conn, executions: List[Dict[str, Any]], server: str):
     for exec in executions:
-        _, _, bench_path = select_benchmark(
-            conn, exec["bench_name"], exec["bench_version"]
-        )
-        if bench_path is None:
+        bench_path = ""
+        res = select_benchmark(conn, exec["bench_name"], exec["bench_version"])
+        if res is not None:
+            _, _, bench_path = res
+        else:
             print(
                 f"[ERROR] Could not retrieve the $PATH of {exec['bench_name']} v{exec['bench_version']}"
             )
@@ -342,7 +334,13 @@ def execution(conn, executions: List[Dict[str, any]], server: str):
                             "bench_name": exec["bench_name"],
                             "bench_version": exec["bench_version"],
                         }
-                        make(variant["compile"].replace("$PATH", bench_path))
+                        compile_cmd = (
+                            variant["compile"]
+                            .replace("$PATH", bench_path)
+                            .replace("$NUM_THREADS", str(thread))
+                            .replace("$APPROX_RATE", str(approx_rate))
+                        )
+                        make(compile_cmd)
 
                         id_run = save_execution(conn, exec_info)[0]
                         save_exec_input(conn, id_run, exec["inputs"])
