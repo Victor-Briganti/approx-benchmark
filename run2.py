@@ -170,6 +170,14 @@ def mape(reference: str, prediction: str):
     return np.mean(np.abs((ref_vals[mask] - pred_vals[mask]) / ref_vals[mask])) * 100.0
 
 
+def metric(conn, gid: int, exec_id: int, metric: str, reference: str, prediction: str):
+    match metric:
+        case "MAPE":
+            save_metric(conn, gid, exec_id, metric, float(mape(reference, prediction)))
+        case _:
+            print(f"[ERROR] {metric} is currently not supported")
+
+
 def make(cmd: str):
     subprocess.run(cmd, shell=True, executable="/bin/bash", check=True)
 
@@ -237,6 +245,12 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
             continue
         _, _, bench_path = res
 
+        if sum(1 for v in entry["variants"] if "baseline" in v) > 1:
+            print("[ERROR] There should be only one baseline per variant")
+            sys.exit(-1)
+
+        baseline_gid = -1
+        baseline_id = -1
         for variant in entry["variants"]:
             is_base = variant.get("baseline") is not None
             threads = [1] if is_base else entry["num_threads"]
@@ -263,6 +277,9 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
                         .replace("$APPROX_RATE", str(rate))
                     )
                     gid = save_execution_group(conn, group_meta)
+                    if is_base:
+                        baseline_gid = gid
+
                     save_exec_input(conn, gid, entry["inputs"])
                     save_exec_envs(conn, gid, variant["env_vars"])
 
@@ -279,7 +296,34 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
                             .replace("$ID_RUN", str(id))
                             .replace("$ID_GROUP", str(gid))
                         )
-                        # Metrics logic... (omitted for brevity, same pattern)
+
+                        if is_base:
+                            baseline_id = id
+                            continue
+
+                        mtype = variant["metric"]["type"]
+                        pred = (
+                            variant["metric"]["prediction"]
+                            .replace("$PATH", bench_path)
+                            .replace("$APPROX_RATE", str(rate))
+                            .replace("$NUM_THREADS", str(t))
+                            .replace("$ID_GROUP_BASE", str(baseline_gid))
+                            .replace("$ID_RUN", str(id))
+                            .replace("$ID_GROUP", str(gid))
+                            .replace("$ID_BASE", str(baseline_id))
+                        )
+                        ref = (
+                            variant["metric"]["reference"]
+                            .replace("$PATH", bench_path)
+                            .replace("$APPROX_RATE", str(rate))
+                            .replace("$NUM_THREADS", str(t))
+                            .replace("$ID_GROUP_BASE", str(baseline_gid))
+                            .replace("$ID_RUN", str(id))
+                            .replace("$ID_GROUP", str(gid))
+                            .replace("$ID_BASE", str(baseline_id))
+                        )
+
+                        metric(conn, gid, id, mtype, pred, ref)
 
 
 def run_plan(conn, plan_path: str):
