@@ -190,6 +190,7 @@ def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
             text=True,
             check=True,
         )
+
         # Parse output
         for line in res.stderr.strip().splitlines():
             try:
@@ -205,6 +206,23 @@ def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
                 continue
     except subprocess.CalledProcessError as e:
         save_exec_error(conn, group_id, exec_id, e.returncode, e.stderr)
+
+
+def pos_process(cmd: str):
+    try:
+        subprocess.run(
+            cmd,
+            shell=True,
+            executable="/bin/bash",
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        print(
+            f"[ERROR] pos-processing command failed, with code ({e.returncode}).\n{e.stderr}"
+        )
+        sys.exit(-1)
 
 
 # ============================================================
@@ -248,11 +266,19 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
                     save_exec_input(conn, gid, entry["inputs"])
                     save_exec_envs(conn, gid, variant["env_vars"])
 
-                    for run_idx in range(iterations):
-                        save_execution_run(conn, gid, run_idx)
-                        run_benchmark(conn, gid, run_idx, group_meta)
-                        update_exec_endtime(conn, gid, run_idx)
+                    for id in range(iterations):
+                        save_execution_run(conn, gid, id)
+                        run_benchmark(conn, gid, id, group_meta)
+                        update_exec_endtime(conn, gid, id)
 
+                        pos_process(
+                            variant["pos-processing"]
+                            .replace("$PATH", bench_path)
+                            .replace("$NUM_THREADS", str(t))
+                            .replace("$APPROX_RATE", str(rate))
+                            .replace("$ID_RUN", str(id))
+                            .replace("$ID_GROUP", str(gid))
+                        )
                         # Metrics logic... (omitted for brevity, same pattern)
 
 
