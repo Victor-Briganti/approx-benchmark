@@ -11,37 +11,37 @@ experiment:
     - name: "2mm"
       version: 0
       path: ./applications/2mm
-      setup: "mkdir -p $PATH/output"
+      setup: "mkdir -p $PATH/output ./report/2mm"
       description: "Multiply two matrixes with this result multiply with another matrix and output the result as a csv like structure (without the header)."
     - name: "correlation"
       version: 0
       path: ./applications/correlation
-      setup: "mkdir -p $PATH/output"
+      setup: "mkdir -p $PATH/output  ./report/correlation"
       description: "Calculate the correlation between all columns of a csv file."
     - name: "deriche"
       version: 0
       path: ./applications/deriche
-      setup: "mkdir -p $PATH/output"
+      setup: "mkdir -p $PATH/output  ./report/deriche"
       description: "Deriche is a edge detector algorithm based on the canny edge detector algorithm."
     - name: "jacobi2d"
       version: 0
       path: ./applications/jacobi2d
-      setup: "mkdir -p $PATH/output"
+      setup: "mkdir -p $PATH/output  ./report/jacobi2d"
       description: "Performs a 2D Jacobi relaxation method on a square grid. Iteratively updates each cell in the grid to the average of its four neighbors. Used for solving partial differential equations such as Laplace''s equation."
     - name: "mandelbrot"
       version: 0
       path: ./applications/mandelbrot
-      setup: "mkdir -p $PATH/output"
+      setup: "mkdir -p $PATH/output  ./report/mandelbrot"
       description: "Calculates the mandelbrot set and ouputs it as a 1-bit P4 portable bitmap image."
     - name: "pi"
       version: 0
       path: ./applications/pi
-      setup: "mkdir -p $PATH/output"
+      setup: "mkdir -p $PATH/output  ./report/pi"
       description: "Calculates the PI number based on the Monte Carlo distribution."
     - name: "kmeans"
       version: 0
       path: ./applications/kmeans
-      setup: "mkdir -p $PATH/output"
+      setup: "mkdir -p $PATH/output  ./report/kmeans"
       description: "Divides a dataset into a given number of clusters. The algorithm starts by randomly selecting initial cluster centers, then iteratively assigns each point to the nearest cluster center."
   executions:
     - bench_name: 2mm
