@@ -44,72 +44,62 @@ experiment:
       setup: "mkdir -p $PATH/output  ./report/kmeans"
       description: "Divides a dataset into a given number of clusters. The algorithm starts by randomly selecting initial cluster centers, then iteratively assigns each point to the nearest cluster center."
   executions:
-    # - bench_name: 2mm
-    #   bench_version: 0
-    #   num_executions: 10
-    #   num_threads: [1, 2, 4, 8, 16]
-    #   inputs:
-    #     matrix_size: 256
-    #     output: output.csv
-    #   variants:
-    #     - type: common
-    #       compile: "make -C $PATH"
-    #       pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
-    #       baseline: true
-    #       env_vars:
-    #         OMP_PROC_BIND: "TRUE"
-    #     - type: omp
-    #       compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
-    #       pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
-    #       metric:
-    #         type: MAPE
-    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
-    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
-    #       env_vars:
-    #         OMP_PROC_BIND: "TRUE"
-    #     - type: approx
-    #       approx-rates: [10, 20, 30, 40, 50]
-    #       compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_init"
-    #       pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
-    #       metric:
-    #         type: MAPE
-    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
-    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
-    #       env_vars:
-    #         OMP_PROC_BIND: "TRUE"
-    #         OMP_APPROX: "TRUE"
-    #     - type: approx
-    #       approx-rates: [10, 20, 30, 40, 50]
-    #       compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_fini"
-    #       pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
-    #       metric:
-    #         type: MAPE
-    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
-    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
-    #       env_vars:
-    #         OMP_PROC_BIND: "TRUE"
-    #         OMP_APPROX: "TRUE"
-    #     - type: approx
-    #       approx-rates: [10, 20, 30, 40, 50]
-    #       compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_large"
-    #       pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
-    #       metric:
-    #         type: MAPE
-    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
-    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
-    #       env_vars:
-    #         OMP_PROC_BIND: "TRUE"
-    #         OMP_APPROX: "TRUE"
-    #     - type: approx
-    #       compile: "make NUM_THREADS=$NUM_THREADS -C $PATH fastmath"
-    #       pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
-    #       metric:
-    #         type: MAPE
-    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
-    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
-    #       env_vars:
-    #         OMP_PROC_BIND: "TRUE"
-    #         OMP_APPROX: "TRUE"
+    - bench_name: 2mm
+      bench_version: 0
+      num_executions: 10
+      num_threads: [1, 2, 4, 8, 16]
+      inputs:
+        matrix_size: 256
+        output: output.csv
+      variants:
+        - type: common
+          compile: "make -C $PATH"
+          pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
+          baseline: true
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+        - type: omp
+          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
+          pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
+          metric:
+            type: MAPE
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+        - type: approx
+          approx-rates: [10, 20, 30, 40, 50]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_init"
+          pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
+          metric:
+            type: MAPE
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+            OMP_APPROX: "TRUE"
+        - type: approx
+          approx-rates: [10, 20, 30, 40, 50]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_fini"
+          pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
+          metric:
+            type: MAPE
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+            OMP_APPROX: "TRUE"
+        - type: approx
+          approx-rates: [10, 20, 30, 40, 50]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_large"
+          pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
+          metric:
+            type: MAPE
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+            OMP_APPROX: "TRUE"
     - bench_name: correlation
       bench_version: 0
       num_executions: 10
@@ -134,7 +124,8 @@ experiment:
           env_vars:
             OMP_PROC_BIND: "TRUE"
         - type: approx
-          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH perfo_init"
+          approx-rates: [10, 20, 30, 40, 50]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_init"
           pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
             type: MAPE
@@ -144,7 +135,8 @@ experiment:
             OMP_PROC_BIND: "TRUE"
             OMP_APPROX: "TRUE"
         - type: approx
-          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH perfo_fini"
+          approx-rates: [10, 20, 30, 40, 50]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_fini"
           pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
             type: MAPE
@@ -154,7 +146,8 @@ experiment:
             OMP_PROC_BIND: "TRUE"
             OMP_APPROX: "TRUE"
         - type: approx
-          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH perfo_large"
+          approx-rates: [10, 20, 30, 40, 50]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_large"
           pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
             type: MAPE
@@ -163,40 +156,60 @@ experiment:
           env_vars:
             OMP_PROC_BIND: "TRUE"
             OMP_APPROX: "TRUE"
+    - bench_name: deriche
+      bench_version: 0
+      num_executions: 10
+      num_threads: [1, 2, 4, 8, 16]
+      inputs:
+        alpha: 0.5
+        input: $PATH/input/sunflower.jpg
+        output: output.jpg
+      variants:
+        - type: common
+          compile: "make -C $PATH"
+          pos-processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
+          baseline: true
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+        - type: omp
+          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
+          pos-processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
+          metric:
+            type: SSIM
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.jpg
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
         - type: approx
-          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH fastmath"
-          pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
+          approx-rates: [10, 20, 30, 40, 50]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_init"
+          pos-processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
           metric:
-            type: MAPE
-            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
-            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+            type: SSIM
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.jpg
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg
           env_vars:
             OMP_PROC_BIND: "TRUE"
-            OMP_APPROX: "TRUE"
-    # - bench_name: deriche
-    #   bench_version: 0
-    #   num_executions: 10
-    #   num_threads: [1, 2, 4, 8, 16]
-    #   inputs:
-    #     alpha: 0.5
-    #     input: $PATH/input/sunflower.jpg
-    #     output: output.jpg
-    #   variants:
-    #     - type: common
-    #       compile: "make -C $PATH"
-    #       pos-processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
-    #       baseline: true
-    #       env_vars:
-    #         OMP_PROC_BIND: "TRUE"
-    #     - type: omp
-    #       compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
-    #       pos-processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
-    #       metric:
-    #         type: SSIM
-    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.jpg
-    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg
-    #       env_vars:
-    #         OMP_PROC_BIND: "TRUE"
+        - type: approx
+          approx-rates: [10, 20, 30, 40, 50]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_fini"
+          pos-processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
+          metric:
+            type: SSIM
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.jpg
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+        - type: approx
+          approx-rates: [10, 20, 30, 40, 50]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_large"
+          pos-processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
+          metric:
+            type: SSIM
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.jpg
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
     # - bench_name: jacobi2d
     #   bench_version: 0
     #   num_executions: 10
@@ -214,6 +227,33 @@ experiment:
     #         OMP_PROC_BIND: "TRUE"
     #     - type: omp
     #       compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
+    #       pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
+    #       metric:
+    #         type: MAPE
+    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
+    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+    #       env_vars:
+    #         OMP_PROC_BIND: "TRUE"
+    #     - type: approx
+    #       compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_init"
+    #       pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
+    #       metric:
+    #         type: MAPE
+    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
+    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+    #       env_vars:
+    #         OMP_PROC_BIND: "TRUE"
+    #     - type: approx
+    #       compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_fini"
+    #       pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
+    #       metric:
+    #         type: MAPE
+    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
+    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+    #       env_vars:
+    #         OMP_PROC_BIND: "TRUE"
+    #     - type: approx
+    #       compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_large"
     #       pos-processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
     #       metric:
     #         type: MAPE
