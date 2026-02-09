@@ -7,7 +7,7 @@ DROP?=5
 all: common
 
 common:
-	$(CXX) $(CFLAGS) $(OMPFLAGS) 2mm.cpp -o 2mm
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=1 2mm.cpp -o 2mm
 
 omp:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm

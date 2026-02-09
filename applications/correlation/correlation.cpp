@@ -91,26 +91,54 @@ double correlation(double *x, double *y, int rows) {
   double sumXY = 0;
   double sumX2 = 0;
   double sumY2 = 0;
+#ifdef FASTMATH
+  double result = 0;
+#endif
 
-  for (size_t i = 0; i < rows; i++) {
-    sumX += x[i];
-    sumY += y[i];
-    sumXY += x[i] * y[i];
-    sumX2 += x[i] * x[i];
-    sumY2 += y[i] * y[i];
+#ifdef FASTMATH
+#pragma omp approx fastmath
+  {
+#endif
+
+    for (size_t i = 0; i < rows; i++) {
+      sumX += x[i];
+      sumY += y[i];
+      sumXY += x[i] * y[i];
+      sumX2 += x[i] * x[i];
+      sumY2 += y[i] * y[i];
+    }
+
+    double numerador = rows * sumXY - sumX * sumY;
+    double denominador = std::sqrt((rows * sumX2 - (sumX * sumX)) *
+                                   (rows * sumY2 - (sumY * sumY)));
+#ifdef FASTMATH
+    result = numerador / denominador;
   }
-
-  double numerador = rows * sumXY - sumX * sumY;
-  double denominador = std::sqrt((rows * sumX2 - (sumX * sumX)) *
-                                 (rows * sumY2 - (sumY * sumY)));
+  return result;
+#else
   return numerador / denominador;
+#endif
 }
 
 double *correlationMatrix(double **&data, int columns, int rows) {
   double *matrix = new double[columns * rows]();
 
+#ifdef PERFO_LARGE
+#pragma omp parallel for approx perfo(large, DROP) collapse(2) shared(matrix)  \
+    schedule(static) num_threads(NUM_THREADS)
+#endif
+#ifdef PERFO_INIT
+#pragma omp parallel for approx perfo(init, DROP) collapse(2) shared(matrix)   \
+    schedule(static) num_threads(NUM_THREADS)
+#endif
+#ifdef PERFO_FINI
+#pragma omp parallel for approx perfo(fini, DROP) collapse(2) shared(matrix)   \
+    schedule(static) num_threads(NUM_THREADS)
+#endif
+#ifdef OMP
 #pragma omp parallel for collapse(2) shared(matrix) schedule(static)           \
     num_threads(NUM_THREADS)
+#endif
   for (int i = 0; i < columns; i++) {
     for (int j = i; j < columns; j++) {
       double r = (j == i) ? 1.0 : correlation(data[i], data[j], rows);

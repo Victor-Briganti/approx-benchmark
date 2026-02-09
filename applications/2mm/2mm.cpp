@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
   {
 #endif
 
-#pragma omp parallel shared(A, B, C, D)
+#pragma omp parallel shared(A, B, C, D) num_threads(NUM_THREADS)
     {
       size_t BS = block_size(matrixSize);
 
