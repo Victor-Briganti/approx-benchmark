@@ -332,7 +332,7 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
             iterations = 1 if is_base else entry["num_executions"]
 
             for t in threads:
-                for rate in variant.get("approx_rates", [None]):
+                for rate in variant.get("approx-rates", [None]):
                     group_meta = {
                         "type": variant["type"],
                         "approx_rate": rate,

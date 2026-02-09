@@ -63,7 +63,6 @@
 //===----------------------------------------------------------------------===//
 
 #include <cmath>
-#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
@@ -74,7 +73,7 @@
 // Helper Functions
 //===------------------------------------------------------------------------===
 
-void output_matrix(uint64_t *&matrix, size_t size, std::ostream &os) {
+void output_matrix(double *&matrix, size_t size, std::ostream &os) {
   for (size_t y = 0; y < size; y++) {
     for (size_t x = 0; x < size; x++) {
       os << matrix[y * size + x] << (x + 1 == size ? '\n' : ',');
@@ -82,8 +81,8 @@ void output_matrix(uint64_t *&matrix, size_t size, std::ostream &os) {
   }
 }
 
-void init_matrix(uint64_t *&matrix, size_t size, bool fill = false) {
-  matrix = new uint64_t[size * size];
+void init_matrix(double *&matrix, size_t size, bool fill = false) {
+  matrix = new double[size * size];
 
   if (fill) {
 #pragma omp parallel for collapse(2)
@@ -96,7 +95,7 @@ void init_matrix(uint64_t *&matrix, size_t size, bool fill = false) {
 }
 
 size_t block_size(size_t matrixSize) {
-  size_t block = (L1_SIZE * matrixSize) / (3 * sizeof(uint64_t));
+  size_t block = (L1_SIZE * matrixSize) / (3 * sizeof(double));
   double block_sqrt = round(sqrt(block));
   return static_cast<size_t>(block_sqrt);
 }
@@ -119,11 +118,11 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  uint64_t *A = nullptr;
-  uint64_t *B = nullptr;
-  uint64_t *C = nullptr;
-  uint64_t *D = nullptr;
-  uint64_t *E = nullptr;
+  double *A = nullptr;
+  double *B = nullptr;
+  double *C = nullptr;
+  double *D = nullptr;
+  double *E = nullptr;
 
   init_matrix(A, matrixSize, true);
   init_matrix(B, matrixSize, true);
@@ -131,46 +130,69 @@ int main(int argc, char **argv) {
   init_matrix(D, matrixSize, true);
   init_matrix(E, matrixSize);
 
-#pragma omp parallel shared(A, B, C, D)
+#ifdef FASTMATH
+#pragma omp approx fastmath
   {
-    size_t BS = block_size(matrixSize);
+#endif
 
-#if PERFO == 1
-#pragma omp approx for perfo(default, (int)(10 * DROP)) schedule(static)
-#else
+#pragma omp parallel shared(A, B, C, D)
+    {
+      size_t BS = block_size(matrixSize);
+
+#ifdef PERFO_LARGE
+#pragma omp for approx perfo(large, DROP) schedule(static)
+#endif
+#ifdef PERFO_INIT
+#pragma omp for approx perfo(init, DROP) schedule(static)
+#endif
+#ifdef PERFO_FINI
+#pragma omp for approx perfo(fini, DROP) schedule(static)
+#endif
+#ifdef OMP
 #pragma omp for schedule(static)
 #endif
-    for (size_t ii = 0; ii < matrixSize; ii += BS) {
-      for (size_t kk = 0; kk < matrixSize; kk += BS) {
-        for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
-          for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
-            uint64_t a_val = A[i * matrixSize + k];
-            for (size_t j = 0; j < matrixSize; ++j) {
-              C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
+      for (size_t ii = 0; ii < matrixSize; ii += BS) {
+        for (size_t kk = 0; kk < matrixSize; kk += BS) {
+          for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
+            for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
+              double a_val = A[i * matrixSize + k];
+              for (size_t j = 0; j < matrixSize; ++j) {
+                C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
+              }
+            }
+          }
+        }
+      }
+
+#ifdef PERFO_LARGE
+#pragma omp for approx perfo(large, DROP) schedule(static)
+#endif
+#ifdef PERFO_INIT
+#pragma omp for approx perfo(init, DROP) schedule(static)
+#endif
+#ifdef PERFO_FINI
+#pragma omp for approx perfo(fini, DROP) schedule(static)
+#endif
+#ifdef OMP
+#pragma omp for schedule(static)
+#endif
+      for (size_t ii = 0; ii < matrixSize; ii += BS) {
+        for (size_t kk = 0; kk < matrixSize; kk += BS) {
+          for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
+            for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
+              double c_val = C[i * matrixSize + k];
+              for (size_t j = 0; j < matrixSize; ++j) {
+                E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
+              }
             }
           }
         }
       }
     }
 
-#if PERFO == 1
-#pragma omp approx for perfo(default, (int)(10 * DROP)) schedule(static)
-#else
-#pragma omp for schedule(static)
-#endif
-    for (size_t ii = 0; ii < matrixSize; ii += BS) {
-      for (size_t kk = 0; kk < matrixSize; kk += BS) {
-        for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
-          for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
-            uint64_t c_val = C[i * matrixSize + k];
-            for (size_t j = 0; j < matrixSize; ++j) {
-              E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
-            }
-          }
-        }
-      }
-    }
+#ifdef FASTMATH
   }
+#endif
 
   output_matrix(E, matrixSize, ofs);
   return 0;

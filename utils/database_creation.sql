@@ -40,9 +40,6 @@ CREATE TABLE IF NOT EXISTS "ExecutionGroup" (
 
   "type" VARCHAR NOT NULL,
   "approx_rate" INTEGER,
-  CHECK (
-    ("type" = 'common') OR ("type" = 'omp') OR ("approx_rate" IS NOT NULL)
-  ),
 
   "compile_command" VARCHAR,
   "num_threads" INTEGER NOT NULL,

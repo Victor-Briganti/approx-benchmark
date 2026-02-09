@@ -1,19 +1,28 @@
-CXX=clang++
-CFLAGS:=-Wall -Wextra -O3
-OMPFLAGS:=-fopenmp
+CXX=/home/nessuno/Documents/workspace/IC/LLVM/llvm-project.approx/build/bin/clang++
+CFLAGS:=-Wall -Wextra -O3 -march=native -fopenmp -I/home/nessuno/Documents/workspace/IC/LLVM/llvm-project.approx/build/lib/clang/21/include -L/home/nessuno/Documents/workspace/IC/LLVM/llvm-project.approx/build/runtimes/runtimes-bins/openmp/runtime/src
+OMPFLAGS:=-fopenmp -Wl,-rpath,/home/nessuno/Documents/workspace/IC/LLVM/llvm-project.approx/build/runtimes/runtimes-bins/openmp/runtime/src -lomp
 NUM_THREADS?=$(shell nproc)
-DROP?=0.5
+DROP?=5
 
 all: common
 
 common:
-	$(CXX) $(CFLAGS) 2mm.cpp -o 2mm
+	$(CXX) $(CFLAGS) $(OMPFLAGS) 2mm.cpp -o 2mm
 
 omp:
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm
 
-perfo_default:
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -DPERFO=1 -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm
+perfo_large:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DPERFO_LARGE -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm
+
+perfo_init:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DPERFO_INIT -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm
+
+perfo_fini:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DPERFO_FINI -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm
+
+fastmath:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DFASTMATH -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm
 
 clean:
 	@rm -f 2mm *.csv
