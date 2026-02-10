@@ -320,38 +320,119 @@ experiment:
     #       env_vars:
     #         OMP_PROC_BIND: "TRUE"
     #         OMP_APPROX: "TRUE"
-    - bench_name: mandelbrot
+    # - bench_name: mandelbrot
+    #   bench_version: 0
+    #   num_executions: 10
+    #   num_threads: [1, 2, 4, 8, 16]
+    #   inputs:
+    #     image_size: 2048
+    #     output_img: output.bmp
+    #   variants:
+    #     - type: common
+    #       compile: "make -C $PATH"
+    #       pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+    #       baseline: true
+    #       env_vars:
+    #         OMP_PROC_BIND: "TRUE"
+    #     - type: omp
+    #       compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
+    #       pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+    #       metric:
+    #         type: SSIM
+    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.bmp
+    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp
+    #       env_vars:
+    #         OMP_PROC_BIND: "TRUE"
+    #     - type: approx
+    #       approx_type: perfo_init
+    #       approx_rates: [10, 20, 30, 40, 50]
+    #       compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_init"
+    #       pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+    #       metric:
+    #         type: SSIM
+    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.bmp
+    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp
+    #       env_vars:
+    #         OMP_PROC_BIND: "TRUE"
+    #         OMP_APPROX: "TRUE"
+    #     - type: approx
+    #       approx_type: perfo_fini
+    #       approx_rates: [10, 20, 30, 40, 50]
+    #       compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_fini"
+    #       pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+    #       metric:
+    #         type: SSIM
+    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.bmp
+    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp
+    #       env_vars:
+    #         OMP_PROC_BIND: "TRUE"
+    #         OMP_APPROX: "TRUE"
+    #     - type: approx
+    #       approx_type: perfo_large
+    #       approx_rates: [10, 20, 30, 40, 50]
+    #       compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_large"
+    #       pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+    #       metric:
+    #         type: SSIM
+    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.bmp
+    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp
+    #       env_vars:
+    #         OMP_PROC_BIND: "TRUE"
+    #         OMP_APPROX: "TRUE"
+    #     - type: approx
+    #       approx_type: fastmath
+    #       compile: "make NUM_THREADS=$NUM_THREADS -C $PATH fastmath"
+    #       pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+    #       metric:
+    #         type: SSIM
+    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.bmp
+    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp
+    #       env_vars:
+    #         OMP_PROC_BIND: "TRUE"
+    #         OMP_APPROX: "TRUE"
+    - bench_name: pi
       bench_version: 0
       num_executions: 10
       num_threads: [1, 2, 4, 8, 16]
       inputs:
-        image_size: 2048
-        output_img: output.bmp
+        num_iterations: 4096
+        file_output: output.csv
       variants:
         - type: common
           compile: "make -C $PATH"
-          pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+          pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
           baseline: true
           env_vars:
             OMP_PROC_BIND: "TRUE"
         - type: omp
           compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
-          pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+          pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
           metric:
-            type: SSIM
-            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.bmp
-            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp
+            type: RMSE
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.csv
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.csv
           env_vars:
             OMP_PROC_BIND: "TRUE"
+        - type: approx
+          approx_type: fastmath
+          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH fastmath"
+          pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
+          metric:
+            type: RMSE
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.csv
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.csv
+          env_vars:
+            OMP_PROC_BIND: "TRUE"
+            OMP_APPROX: "TRUE"
         - type: approx
           approx_type: perfo_init
           approx_rates: [10, 20, 30, 40, 50]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_init"
-          pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+          pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
           metric:
-            type: SSIM
-            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
-            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+            type: RMSE
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.csv
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.csv
           env_vars:
             OMP_PROC_BIND: "TRUE"
             OMP_APPROX: "TRUE"
@@ -359,11 +440,11 @@ experiment:
           approx_type: perfo_fini
           approx_rates: [10, 20, 30, 40, 50]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_fini"
-          pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+          pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
           metric:
-            type: SSIM
-            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
-            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+            type: RMSE
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.csv
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.csv
           env_vars:
             OMP_PROC_BIND: "TRUE"
             OMP_APPROX: "TRUE"
@@ -371,48 +452,14 @@ experiment:
           approx_type: perfo_large
           approx_rates: [10, 20, 30, 40, 50]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH perfo_large"
-          pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
+          pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
           metric:
-            type: SSIM
-            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
-            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
+            type: RMSE
+            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.csv
+            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.csv
           env_vars:
             OMP_PROC_BIND: "TRUE"
             OMP_APPROX: "TRUE"
-        - type: approx
-          approx_type: fastmath
-          compile: "make NUM_THREADS=$NUM_THREADS -C $PATH fastmath"
-          pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
-          metric:
-            type: SSIM
-            reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.parquet
-            prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.parquet
-          env_vars:
-            OMP_PROC_BIND: "TRUE"
-            OMP_APPROX: "TRUE"
-    # - bench_name: pi
-    #   bench_version: 0
-    #   num_executions: 10
-    #   num_threads: [1, 2, 4, 8, 16]
-    #   inputs:
-    #     num_iterations: 4096
-    #     file_output: output.csv
-    #   variants:
-    #     - type: common
-    #       compile: "make -C $PATH"
-    #       pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
-    #       baseline: true
-    #       env_vars:
-    #         OMP_PROC_BIND: "TRUE"
-    #     - type: omp
-    #       compile: "make NUM_THREADS=$NUM_THREADS -C $PATH omp"
-    #       pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
-    #       metric:
-    #         type: RMSE
-    #         reference: $PATH/output/output_$ID_GROUP_BASEg_$ID_BASE.csv
-    #         prediction: $PATH/output/output_$ID_GROUPg_$ID_RUN.csv
-    #       env_vars:
-    #         OMP_PROC_BIND: "TRUE"
     # - bench_name: kmeans
     #   bench_version: 0
     #   num_executions: 10

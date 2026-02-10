@@ -55,7 +55,7 @@ struct RandState {
 
 // This is a random number generator based on the xorshiftr128+ algorithm.
 // Reference: https://en.wikipedia.org/wiki/Xorshift#xorshiftr+
-uint64_t xorshiftr128plus(RandState &state) {
+inline uint64_t xorshiftr128plus(RandState &state) {
   uint64_t x = state.seed[0];
   const uint64_t y = state.seed[1];
   state.seed[0] = y;
@@ -83,14 +83,32 @@ double piMonteCarlo(uint64_t numIterations) {
 
     RandState state = {ompID, ompID + 1};
 
+#ifdef PERFO_LARGE
+#pragma omp for approx perfo(large, DROP) schedule(static)
+#endif
+#ifdef PERFO_INIT
+#pragma omp for approx perfo(init, DROP) schedule(static)
+#endif
+#ifdef PERFO_FINI
+#pragma omp for approx perfo(fini, DROP) schedule(static)
+#endif
+#ifdef OMP
 #pragma omp for schedule(static)
+#endif
     for (uint64_t i = 0; i < numIterations; i++) {
-      const double x = randomDouble(state);
-      const double y = randomDouble(state);
+#ifdef FASTMATH
+#pragma omp approx fastmath
+      {
+#endif
+        const double x = randomDouble(state);
+        const double y = randomDouble(state);
 
-      if ((x * x + y * y) <= 1) {
-        hit++;
+        if ((x * x + y * y) <= 1) {
+          hit++;
+        }
+#ifdef FASTMATH
       }
+#endif
     }
   }
 
