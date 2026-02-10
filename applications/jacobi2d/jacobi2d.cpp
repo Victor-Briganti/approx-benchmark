@@ -99,25 +99,52 @@ double *init_matrix(size_t size, int offset) {
 //===------------------------------------------------------------------------===
 
 void jacobi_2d(int steps, size_t size, double *A, double *B) {
+#ifdef FASTMATH
+#pragma omp approx fastmath
+#endif
+  {
 #pragma omp parallel num_threads(NUM_THREADS)
-  for (int t = 0; t < steps; t++) {
+    for (int t = 0; t < steps; t++) {
+#ifdef PERFO_LARGE
+#pragma omp for approx perfo(large, DROP) collapse(2) schedule(static)
+#endif
+#ifdef PERFO_INIT
+#pragma omp for approx perfo(init, DROP) collapse(2) schedule(static)
+#endif
+#ifdef PERFO_FINI
+#pragma omp for approx perfo(fini, DROP) collapse(2) schedule(static)
+#endif
+#ifdef OMP
 #pragma omp for collapse(2) schedule(static)
-    for (size_t i = 1; i < size - 1; i++) {
-      for (size_t j = 1; j < size - 1; j++) {
-        B[i * size + j] =
-            (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
-             A[(i - 1) * size + j] + A[(i + 1) * size + j]) /
-            4;
+#endif
+      for (size_t i = 1; i < size - 1; i++) {
+        for (size_t j = 1; j < size - 1; j++) {
+          B[i * size + j] =
+              (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
+               A[(i - 1) * size + j] + A[(i + 1) * size + j]) /
+              4;
+        }
       }
-    }
 
+#ifdef PERFO_LARGE
+#pragma omp for approx perfo(large, DROP) collapse(2) schedule(static)
+#endif
+#ifdef PERFO_INIT
+#pragma omp for approx perfo(init, DROP) collapse(2) schedule(static)
+#endif
+#ifdef PERFO_FINI
+#pragma omp for approx perfo(fini, DROP) collapse(2) schedule(static)
+#endif
+#ifdef OMP
 #pragma omp for collapse(2) schedule(static)
-    for (size_t i = 1; i < size - 1; i++) {
-      for (size_t j = 1; j < size - 1; j++) {
-        A[i * size + j] =
-            (B[i * size + j] + B[i * size + j + 1] + B[i * size + j - 1] +
-             B[(i - 1) * size + j] + B[(i + 1) * size + j]) /
-            4;
+#endif
+      for (size_t i = 1; i < size - 1; i++) {
+        for (size_t j = 1; j < size - 1; j++) {
+          A[i * size + j] =
+              (B[i * size + j] + B[i * size + j + 1] + B[i * size + j - 1] +
+               B[(i - 1) * size + j] + B[(i + 1) * size + j]) /
+              4;
+        }
       }
     }
   }

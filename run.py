@@ -332,9 +332,10 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
             iterations = 1 if is_base else entry["num_executions"]
 
             for t in threads:
-                for rate in variant.get("approx-rates", [None]):
+                for rate in variant.get("approx_rates", [None]):
                     group_meta = {
                         "type": variant["type"],
+                        "approx_type": variant["approx_type"],
                         "approx_rate": rate,
                         "compile_command": variant["compile"],
                         "num_threads": t,
@@ -364,7 +365,7 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
                         update_exec_endtime(conn, gid, id)
 
                         pos_process(
-                            variant["pos-processing"]
+                            variant["pos_processing"]
                             .replace("$PATH", bench_path)
                             .replace("$NUM_THREADS", str(t))
                             .replace("$APPROX_RATE", str(rate))

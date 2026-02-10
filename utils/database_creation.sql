@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS "ExecutionGroup" (
   "id" BIGINT DEFAULT nextval('ExecGroupSeq'),
 
   "type" VARCHAR NOT NULL,
+  "approx_type" VARCHAR,
   "approx_rate" INTEGER,
 
   "compile_command" VARCHAR,
