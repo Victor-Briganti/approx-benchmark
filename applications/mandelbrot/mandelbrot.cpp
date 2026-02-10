@@ -93,17 +93,32 @@ inline double fast_abs(const Complex &number) {
 inline bool mandelbrot(const Complex &c) {
   Complex z = {0.0, 0.0};
 
-  for (int i = 0; i < MAX_ITERATIONS; i++) {
-    two_exponential(z);
-    z.real += c.real;
-    z.imag += c.imag;
+#ifdef FASTMATH
+  bool result = true;
+#pragma omp approx fastmath
+  {
+#endif
+    for (int i = 0; i < MAX_ITERATIONS; i++) {
+      two_exponential(z);
+      z.real += c.real;
+      z.imag += c.imag;
 
-    if (fast_abs(z) > LIMIT) {
+      if (fast_abs(z) > LIMIT) {
+#ifdef FASTMATH
+        result = false;
+        break;
+#else
       return false;
+#endif
+      }
     }
-  }
 
+#ifdef FASTMATH
+  }
+  return result;
+#else
   return true;
+#endif
 }
 
 //===------------------------------------------------------------------------===
@@ -129,7 +144,21 @@ int main(int argc, char **argv) {
   double scaleX = (REAL_FINAL_RANGE - REAL_INIT_RANGE) / imageSize;
   double scaleY = (IMAG_FINAL_RANGE - IMAG_INIT_RANGE) / imageSize;
 
+#ifdef PERFO_LARGE
+#pragma omp parallel for approx perfo(large, DROP) shared(pixels)              \
+    num_threads(NUM_THREADS)
+#endif
+#ifdef PERFO_INIT
+#pragma omp parallel for approx perfo(init, DROP) shared(pixels)               \
+    num_threads(NUM_THREADS)
+#endif
+#ifdef PERFO_FINI
+#pragma omp parallel for approx perfo(fini, DROP) shared(pixels)               \
+    num_threads(NUM_THREADS)
+#endif
+#ifdef OMP
 #pragma omp parallel for shared(pixels) num_threads(NUM_THREADS)
+#endif
   for (int pixel = 0; pixel < pixels.size(); pixel++) {
     uint8_t byte = 0;
 

@@ -93,9 +93,6 @@ double correlation(double *x, double *y, int rows) {
   double sumY2 = 0;
 #ifdef FASTMATH
   double result = 0;
-#endif
-
-#ifdef FASTMATH
 #pragma omp approx fastmath
   {
 #endif

@@ -90,13 +90,14 @@ def save_benchmarks(conn, benchmarks: List[Dict[str, Any]]):
 def save_execution_group(conn, exec_info: Dict[str, Any]) -> int:
     return conn.execute(
         """
-        INSERT INTO ExecutionGroup(type, approx_rate, compile_command, num_threads, server, bench_name, bench_version)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO ExecutionGroup(type, approx_rate, approx_type, compile_command, num_threads, server, bench_name, bench_version)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id;
         """,
         (
             exec_info["type"],
             exec_info["approx_rate"],
+            exec_info["approx_type"],
             exec_info["compile_command"],
             exec_info["num_threads"],
             exec_info["server"],
@@ -335,8 +336,8 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
                 for rate in variant.get("approx_rates", [None]):
                     group_meta = {
                         "type": variant["type"],
-                        "approx_type": variant["approx_type"],
                         "approx_rate": rate,
+                        "approx_type": variant.get("approx_type", None),
                         "compile_command": variant["compile"],
                         "num_threads": t,
                         "server": server,
