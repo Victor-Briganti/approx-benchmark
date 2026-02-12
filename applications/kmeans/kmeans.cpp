@@ -64,23 +64,29 @@ int find_nearest_point(float *centroids, int numClusters, float *features,
   int index = -1;
   float minDist = FLT_MAX;
 
-  for (int i = 0; i < numClusters; i++) {
-    float dist = 0.0f;
+#ifdef FASTMATH
+#pragma omp approx fastmath
+  {
+#endif
+    for (int i = 0; i < numClusters; i++) {
+      float dist = 0.0f;
 
-    for (int j = 0; j < numFeatures; j++) {
-      int idxCentroid = i * numFeatures + j;
-      int idxPoint = point * numFeatures + j;
+      for (int j = 0; j < numFeatures; j++) {
+        int idxCentroid = i * numFeatures + j;
+        int idxPoint = point * numFeatures + j;
 
-      float diff = centroids[idxCentroid] - features[idxPoint];
-      dist += diff * diff;
+        float diff = centroids[idxCentroid] - features[idxPoint];
+        dist += diff * diff;
+      }
+
+      if (dist < minDist) {
+        index = i;
+        minDist = dist;
+      }
     }
-
-    if (dist < minDist) {
-      index = i;
-      minDist = dist;
-    }
+#ifdef FASTMATH
   }
-
+#endif
   return index;
 }
 
@@ -107,8 +113,22 @@ float *kmeans_clustering(float *features, int numFeatures, int numPoints,
 #pragma omp parallel shared(features, centroids, newCentroids,                 \
                                 newCentroidsLen) num_threads(NUM_THREADS)
     {
+#ifdef PERFO_LARGE
+#pragma omp for approx perfo(large, DROP) reduction(+ : delta)                 \
+    reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
+#endif
+#ifdef PERFO_INIT
+#pragma omp for approx perfo(init, DROP) reduction(+ : delta)                  \
+    reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
+#endif
+#ifdef PERFO_FINI
+#pragma omp for approx perfo(fini, DROP) reduction(+ : delta)                  \
+    reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
+#endif
+#ifdef OMP
 #pragma omp for reduction(+ : delta)                                           \
     reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
+#endif
       for (int j = 0; j < numPoints; j++) {
         int index = find_nearest_point(centroids, numClusters, features, j,
                                        numFeatures);
@@ -126,7 +146,18 @@ float *kmeans_clustering(float *features, int numFeatures, int numPoints,
         }
       }
 
+#ifdef PERFO_LARGE
+#pragma omp for approx perfo(large, DROP) collapse(2) schedule(static)
+#endif
+#ifdef PERFO_INIT
+#pragma omp for approx perfo(large, DROP) collapse(2) schedule(static)
+#endif
+#ifdef PERFO_FINI
+#pragma omp for approx perfo(large, DROP) collapse(2) schedule(static)
+#endif
+#ifdef OMP
 #pragma omp for collapse(2) schedule(static)
+#endif
       for (int j = 0; j < numClusters; j++) {
         for (int k = 0; k < numFeatures; k++) {
           if (newCentroidsLen[j] > 0) {
