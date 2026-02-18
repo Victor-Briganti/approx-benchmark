@@ -91,12 +91,16 @@ double correlation(double *x, double *y, int rows) {
   double sumXY = 0;
   double sumX2 = 0;
   double sumY2 = 0;
-#ifdef FASTMATH
+
+#ifdef MEMO
+  double result = 0;
+#pragma omp approx memo(DROP) output(result)
+  {
+#elif defined(FASTMATH)
   double result = 0;
 #pragma omp approx fastmath
   {
 #endif
-
     for (size_t i = 0; i < rows; i++) {
       sumX += x[i];
       sumY += y[i];
@@ -108,12 +112,12 @@ double correlation(double *x, double *y, int rows) {
     double numerador = rows * sumXY - sumX * sumY;
     double denominador = std::sqrt((rows * sumX2 - (sumX * sumX)) *
                                    (rows * sumY2 - (sumY * sumY)));
-#ifdef FASTMATH
+#if defined(MEMO) || defined(FASTMATH)
     result = numerador / denominador;
   }
   return result;
 #else
-  return numerador / denominador;
+    return numerador / denominador;
 #endif
 }
 

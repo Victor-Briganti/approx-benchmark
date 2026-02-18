@@ -93,7 +93,13 @@ inline double fast_abs(const Complex &number) {
 inline bool mandelbrot(const Complex &c) {
   Complex z = {0.0, 0.0};
 
-#ifdef FASTMATH
+#ifdef MEMO
+  bool result = true;
+  double real = z.real;
+  double imag = z.imag;
+#pragma omp approx memo(DROP) output(result)
+  {
+#elif defined(FASTMATH)
   bool result = true;
 #pragma omp approx fastmath
   {
@@ -104,20 +110,20 @@ inline bool mandelbrot(const Complex &c) {
       z.imag += c.imag;
 
       if (fast_abs(z) > LIMIT) {
-#ifdef FASTMATH
+#if defined(FASTMATH) || defined(MEMO)
         result = false;
         break;
 #else
-      return false;
+        return false;
 #endif
       }
     }
 
-#ifdef FASTMATH
+#if defined(FASTMATH) || defined(MEMO)
   }
   return result;
 #else
-  return true;
+    return true;
 #endif
 }
 

@@ -49,6 +49,25 @@
 #include <omp.h>
 #endif // _OPENMP
 
+#ifdef MEMO
+// This is a random number generator based on the xorshiftr128+ algorithm.
+// Reference: https://en.wikipedia.org/wiki/Xorshift#xorshiftr+
+inline uint64_t xorshiftr128plus(uint64_t state0, uint64_t state1) {
+  uint64_t x = state0;
+  const uint64_t y = state1;
+  state0 = y;
+  x ^= x << 23; // shift & xor
+  x ^= x >> 17; // shift & xor
+  x ^= y;       // xor
+  state1 = x + y;
+  return x;
+}
+
+inline double randomDouble(uint64_t state0, uint64_t state1) {
+  return static_cast<double>(xorshiftr128plus(state0, state1)) / UINT64_MAX;
+}
+
+#else
 struct RandState {
   uint64_t seed[2];
 };
@@ -69,6 +88,7 @@ inline uint64_t xorshiftr128plus(RandState &state) {
 inline double randomDouble(RandState &state) {
   return static_cast<double>(xorshiftr128plus(state)) / UINT64_MAX;
 }
+#endif
 
 double piMonteCarlo(uint64_t numIterations) {
   uint64_t hit = 0;
@@ -81,7 +101,12 @@ double piMonteCarlo(uint64_t numIterations) {
     uint64_t ompID = 0;
 #endif // _OPENMP
 
+#ifdef MEMO
+    uint64_t state0 = ompID;
+    uint64_t state1 = ompID + 1;
+#else
     RandState state = {ompID, ompID + 1};
+#endif
 
 #ifdef PERFO_LARGE
 #pragma omp for approx perfo(large, DROP) schedule(static)
@@ -100,12 +125,22 @@ double piMonteCarlo(uint64_t numIterations) {
 #pragma omp approx fastmath
       {
 #endif
-        const double x = randomDouble(state);
-        const double y = randomDouble(state);
+#ifdef MEMO
+#pragma omp approx memo(DROP) input(state0, state1) output(hit)
+        {
+          const double x = randomDouble(state0, state1);
+          const double y = randomDouble(state0, state1);
+#else
+      const double x = randomDouble(state);
+      const double y = randomDouble(state);
+#endif
 
-        if ((x * x + y * y) <= 1) {
-          hit++;
+          if ((x * x + y * y) <= 1) {
+            hit++;
+          }
+#ifdef MEMO
         }
+#endif
 #ifdef FASTMATH
       }
 #endif

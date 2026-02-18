@@ -24,5 +24,8 @@ perfo_fini:
 fastmath:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DFASTMATH -DNUM_THREADS=$(NUM_THREADS) deriche.cpp -o deriche
 
+memo:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DMEMO -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) deriche.cpp -o deriche
+
 clean:
 	@rm -f deriche *.csv

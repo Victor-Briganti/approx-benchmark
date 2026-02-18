@@ -24,5 +24,8 @@ perfo_fini:
 fastmath:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DFASTMATH -DNUM_THREADS=$(NUM_THREADS) jacobi2d.cpp -o jacobi2d
 
+memo:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DMEMO -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) jacobi2d.cpp -o jacobi2d
+
 clean:
 	@rm -f jacobi2d *.csv

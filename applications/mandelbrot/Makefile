@@ -24,5 +24,8 @@ perfo_fini:
 fastmath:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DFASTMATH -DNUM_THREADS=$(NUM_THREADS) mandelbrot.cpp -o mandelbrot
 
+memo:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DMEMO -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) mandelbrot.cpp -o mandelbrot
+
 clean:
 	@rm -f mandelbrot *.csv

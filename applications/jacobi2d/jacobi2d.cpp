@@ -103,43 +103,80 @@ void jacobi_2d(int steps, size_t size, double *A, double *B) {
 #pragma omp approx fastmath
 #endif
   {
-#pragma omp parallel num_threads(NUM_THREADS)
     for (int t = 0; t < steps; t++) {
 #ifdef PERFO_LARGE
-#pragma omp for approx perfo(large, DROP) collapse(2) schedule(static)
+#pragma omp parallel for approx perfo(large, DROP) collapse(2)                 \
+    schedule(static) num_threads(NUM_THREADS)
 #endif
 #ifdef PERFO_INIT
-#pragma omp for approx perfo(init, DROP) collapse(2) schedule(static)
+#pragma omp parallel for approx perfo(init, DROP) collapse(2) schedule(static) \
+    num_threads(NUM_THREADS)
 #endif
 #ifdef PERFO_FINI
-#pragma omp for approx perfo(fini, DROP) collapse(2) schedule(static)
+#pragma omp parallel for approx perfo(fini, DROP) collapse(2) schedule(static) \
+    num_threads(NUM_THREADS)
 #endif
 #ifdef OMP
-#pragma omp for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) num_threads(NUM_THREADS)
 #endif
       for (size_t i = 1; i < size - 1; i++) {
         for (size_t j = 1; j < size - 1; j++) {
+#ifdef MEMO
+          double A1 = A[i * size + j];
+          double A2 = A[i * size + j + 1];
+          double A3 = A[i * size + j - 1];
+          double A4 = A[(i - 1) * size + j];
+          double A5 = A[(i + 1) * size + j];
+          double res = 0.0;
+#pragma omp approx memo(DROP) output(res)
+          {
+            res = (A1 + A2 + A3 + A4 + A5) / 4;
+          }
+          B[i * size + j] = res;
+#else
           B[i * size + j] =
               (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
                A[(i - 1) * size + j] + A[(i + 1) * size + j]) /
               4;
+#endif
         }
       }
 
 #ifdef PERFO_LARGE
-#pragma omp for approx perfo(large, DROP) collapse(2) schedule(static)
+#pragma omp parallel for approx perfo(large, DROP) collapse(2)                 \
+    schedule(static) num_threads(NUM_THREADS)
 #endif
 #ifdef PERFO_INIT
-#pragma omp for approx perfo(init, DROP) collapse(2) schedule(static)
+#pragma omp parallel for approx perfo(init, DROP) collapse(2) schedule(static) \
+    num_threads(NUM_THREADS)
 #endif
 #ifdef PERFO_FINI
-#pragma omp for approx perfo(fini, DROP) collapse(2) schedule(static)
+#pragma omp parallel for approx perfo(fini, DROP) collapse(2) schedule(static) \
+    num_threads(NUM_THREADS)
 #endif
 #ifdef OMP
-#pragma omp for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) num_threads(NUM_THREADS)
 #endif
       for (size_t i = 1; i < size - 1; i++) {
         for (size_t j = 1; j < size - 1; j++) {
+#ifdef MEMO
+          double B1 = B[i * size + j];
+          double B2 = B[i * size + j + 1];
+          double B3 = B[i * size + j - 1];
+          double B4 = B[(i - 1) * size + j];
+          double B5 = B[(i + 1) * size + j];
+          double res = 0.0;
+#pragma omp approx memo(DROP) output(res)
+          {
+            res = (B1 + B2 + B3 + B4 + B5) / 4;
+          }
+          A[i * size + j] = res;
+#else
+          B[i * size + j] =
+              (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
+               A[(i - 1) * size + j] + A[(i + 1) * size + j]) /
+              4;
+#endif
           A[i * size + j] =
               (B[i * size + j] + B[i * size + j + 1] + B[i * size + j - 1] +
                B[(i - 1) * size + j] + B[(i + 1) * size + j]) /

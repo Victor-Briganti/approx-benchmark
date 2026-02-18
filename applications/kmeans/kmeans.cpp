@@ -130,8 +130,17 @@ float *kmeans_clustering(float *features, int numFeatures, int numPoints,
     reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
 #endif
       for (int j = 0; j < numPoints; j++) {
+#ifdef MEMO
+        int index = 0;
+#pragma omp approx memo(DROP) output(index)
+        {
+          index = find_nearest_point(centroids, numClusters, features, j,
+                                     numFeatures);
+        }
+#else
         int index = find_nearest_point(centroids, numClusters, features, j,
                                        numFeatures);
+#endif
 
         if (membership[j] != index) {
           delta += 1.0;

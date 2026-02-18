@@ -24,5 +24,8 @@ perfo_fini:
 fastmath:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DFASTMATH -DNUM_THREADS=$(NUM_THREADS) correlation.cpp -o correlation
 
+memo:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DMEMO -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) correlation.cpp -o correlation
+
 clean:
 	@rm -f correlation *.csv

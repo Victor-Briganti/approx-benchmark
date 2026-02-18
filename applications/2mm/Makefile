@@ -24,5 +24,8 @@ perfo_fini:
 fastmath:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DFASTMATH -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm
 
+memo:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DDROP=$(DROP) -DMEMO -DNUM_THREADS=$(NUM_THREADS) 2mm.cpp -o 2mm
+
 clean:
 	@rm -f 2mm *.csv

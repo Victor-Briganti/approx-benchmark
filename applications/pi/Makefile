@@ -24,5 +24,8 @@ perfo_fini:
 fastmath:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DFASTMATH -DNUM_THREADS=$(NUM_THREADS) pi.cpp -o pi
 
+memo:
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DDROP=$(DROP) -DMEMO -DNUM_THREADS=$(NUM_THREADS) pi.cpp -o pi
+
 clean:
 	@rm -f pi *.csv

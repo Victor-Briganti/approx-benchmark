@@ -157,7 +157,17 @@ int main(int argc, char **argv) {
             for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
               double a_val = A[i * matrixSize + k];
               for (size_t j = 0; j < matrixSize; ++j) {
-                C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
+#ifdef MEMO
+                double res = 0;
+                double b_val = B[k * matrixSize + j];
+#pragma omp approx memo(DROP) output(res)
+                {
+                  res = a_val * b_val;
+                }
+                C[i * matrixSize + j] += res;
+#else
+              C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
+#endif
               }
             }
           }
@@ -182,7 +192,17 @@ int main(int argc, char **argv) {
             for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
               double c_val = C[i * matrixSize + k];
               for (size_t j = 0; j < matrixSize; ++j) {
-                E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
+#ifdef MEMO
+                double res = 0;
+                double d_val = D[k * matrixSize + j];
+#pragma omp approx memo(DROP) output(res)
+                {
+                  res = c_val * d_val;
+                }
+                E[i * matrixSize + j] += c_val * d_val;
+#else
+              E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
+#endif
               }
             }
           }
