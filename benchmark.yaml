@@ -1,12 +1,12 @@
 experiment:
   server:
-    hostname: thinkpad
-    cpu_description: AMD Ryzen 5 5500U
+    hostname: ubuntu
+    cpu_description: AMD Ryzen 5 3500U
     hertz: 2.1
-    cores: 6
-    threads: 12
-    ram_memory: 16
-    operating_system: Ubuntu 25.04
+    cores: 4
+    threads: 6
+    ram_memory: 10
+    operating_system: Ubuntu 24.04
   benchmarks:
     - name: "2mm"
       version: 0

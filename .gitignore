@@ -6,3 +6,4 @@ performance/
 *.db
 *.db.wal
 *.pdf
+*.swp
