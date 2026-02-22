@@ -265,6 +265,8 @@ def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
     for _, val in exec_info["inputs"].items():
         cmd += f"{str(val).replace('$PATH', exec_info['bench_path'])} "
 
+    print(f"Command {cmd}")
+
     try:
         res = subprocess.run(
             cmd,
