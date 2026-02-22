@@ -49,7 +49,7 @@ experiment:
       num_executions: 10
       num_threads: [1, 2, 4, 8, 16]
       inputs:
-        matrix_size: 256
+        matrix_size: 1024
         output: output.csv
       variants:
         - type: common
@@ -462,7 +462,7 @@ experiment:
       num_executions: 10
       num_threads: [1, 2, 4, 8, 16]
       inputs:
-        num_iterations: 4096
+        num_iterations: 10000000000
         file_output: output.csv
       variants:
         - type: common
