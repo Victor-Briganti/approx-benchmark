@@ -126,7 +126,7 @@ double piMonteCarlo(uint64_t numIterations) {
       {
 #endif
 #ifdef MEMO
-#pragma omp approx memo(DROP) input(state0, state1) output(hit)
+#pragma omp approx memo(DROP) output(hit)
         {
           const double x = randomDouble(state0, state1);
           const double y = randomDouble(state0, state1);
