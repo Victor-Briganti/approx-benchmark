@@ -16,7 +16,7 @@ experiment:
     - name: "correlation"
       version: 0
       path: ./applications/correlation
-      setup: "mkdir -p $PATH/output  ./report/correlation && unzip -o $PATH/input/input.zip -d $PATH/input/input.csv"
+      setup: "mkdir -p $PATH/output  ./report/correlation && unzip -o $PATH/input/input.zip -d $PATH/input/"
       description: "Calculate the correlation between all columns of a csv file."
     - name: "deriche"
       version: 0
@@ -41,7 +41,7 @@ experiment:
     - name: "kmeans"
       version: 0
       path: ./applications/kmeans
-      setup: "mkdir -p $PATH/output  ./report/kmeans && unzip -o $PATH/input/kdd_cup.zip -d $PATH/input/kdd_cpu.csv"
+      setup: "mkdir -p $PATH/output  ./report/kmeans && unzip -o $PATH/input/kdd_cup.zip -d $PATH/input/"
       description: "Divides a dataset into a given number of clusters. The algorithm starts by randomly selecting initial cluster centers, then iteratively assigns each point to the nearest cluster center."
   executions:
     - bench_name: 2mm
