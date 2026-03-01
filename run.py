@@ -208,38 +208,6 @@ def smape(reference: str, prediction: str):
         * 100.0
     )
 
-
-def mae(reference: str, prediction: str):
-    ref_vals = load_file_type(reference)
-    pred_vals = load_file_type(prediction)
-    if ref_vals.shape != pred_vals.shape:
-        print(
-            f"[ERROR] Shape mismatch (reference shape) {ref_vals.shape} != {pred_vals.shape} (prediction shape)."
-        )
-        sys.exit(-1)
-
-    mae = np.mean(np.abs(ref_vals - pred_vals))
-    return mae / 2 * 100
-
-
-def nrmse(reference: str, prediction: str):
-    ref_vals = load_file_type(reference)
-    pred_vals = load_file_type(prediction)
-
-    if ref_vals.shape != pred_vals.shape:
-        print(
-            f"[ERROR] Shape mismatch (reference shape) {ref_vals.shape} != {pred_vals.shape} (prediction shape)."
-        )
-        sys.exit(-1)
-
-    rmse_val = np.sqrt(np.mean((ref_vals - pred_vals) ** 2))
-    norm = np.mean(np.abs(ref_vals))
-    if norm == 0:
-        return 0.0
-
-    return (rmse_val / norm) * 100.0
-
-
 def mcr(reference: str, prediction: str):
     ref_vals = load_file_type(reference)
     pred_vals = load_file_type(prediction)
@@ -283,21 +251,9 @@ def metric(
             save_metric(
                 conn, gid, exec_id, metric, float(ssim(reference, prediction))
             )
-        case "NRMSE":
-            save_metric(
-                conn, gid, exec_id, metric, float(nrmse(reference, prediction))
-            )
         case "MCR":
             save_metric(
                 conn, gid, exec_id, metric, float(mcr(reference, prediction))
-            )
-        case "MAE":
-            save_metric(
-                conn,
-                gid,
-                exec_id,
-                metric,
-                float(mae(reference, prediction)),
             )
         case _:
             print(f"[ERROR] {metric} is currently not supported")
