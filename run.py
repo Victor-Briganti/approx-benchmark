@@ -180,7 +180,7 @@ def load_file_type(path: str) -> np.ndarray:
     return df.to_numpy(dtype=np.float64)
 
 
-def mape(reference: str, prediction: str):
+def smape(reference: str, prediction: str):
     ref_vals = load_file_type(reference)
     pred_vals = load_file_type(prediction)
     if ref_vals.shape != pred_vals.shape:
@@ -189,8 +189,9 @@ def mape(reference: str, prediction: str):
         )
         sys.exit(-1)
 
-    mask = ref_vals != 0
-    return np.mean(np.abs((ref_vals[mask] - pred_vals[mask]) / ref_vals[mask])) * 100.0
+    denom = np.abs(ref_vals) + np.abs(pred_vals)
+    mask = denom != 0
+    return np.mean(2.0 * np.abs(ref_vals[mask] - pred_vals[mask]) / denom[mask]) * 100.0
 
 
 def rmse(reference: str, prediction: str):
@@ -236,13 +237,13 @@ def metric(
     prediction: str,
 ):
     match metric:
-        case "MAPE":
+        case "SMAPE":
             save_metric(
                 conn,
                 gid,
                 exec_id,
                 metric,
-                float(mape(reference, prediction)),
+                float(smape(reference, prediction)),
             )
         case "SSIM":
             save_metric(conn, gid, exec_id, metric, float(ssim(reference, prediction)))
@@ -264,8 +265,6 @@ def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
     cmd += f"{exec_info['bench_path']}/{exec_info['bench_name']} "
     for _, val in exec_info["inputs"].items():
         cmd += f"{str(val).replace('$PATH', exec_info['bench_path'])} "
-
-    print(f"Command {cmd}")
 
     try:
         env = os.environ.copy()
