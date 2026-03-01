@@ -100,6 +100,7 @@ def get_approx_execution_group_id(
 
     return int(df.iloc[0]["id"])
 
+
 def get_omp_execution_group_id(
     conn,
     app_name: str,
@@ -186,7 +187,9 @@ def plot_quality_metrics(
     app_name, app_version, approx_type, approx_rate, metrics
 ):
     if not metrics:
-        print(f"[WARN] No metrics to plot. App: {app_name}, Type: {approx_type}, Rate: {approx_rate}")
+        print(
+            f"[WARN] No metrics to plot. App: {app_name}, Type: {approx_type}, Rate: {approx_rate}"
+        )
         return
 
     df = pd.concat(metrics, ignore_index=True)
@@ -199,6 +202,7 @@ def plot_quality_metrics(
             g_sorted["threads"],
             g_sorted["value"],
             marker="o",
+            label=metric_name.upper(),
         )
 
     title = f"{app_name.upper()} {approx_type} "
@@ -249,12 +253,9 @@ def plot_performance(
     df_approx["speedup"] = base_val / df_approx["value"]
     df_omp["speedup"] = base_val / df_omp["value"]
 
+    all_threads = sorted(set(df_approx["threads"]) | set(df_omp["threads"]))
+
     plt.figure(figsize=(8, 5))
-
-    all_threads = sorted(
-        set(df_approx["threads"]) | set(df_omp["threads"])
-    )
-
     plt.plot(
         df_omp["threads"],
         df_omp["speedup"],
@@ -262,7 +263,6 @@ def plot_performance(
         linestyle="--",
         label="omp",
     )
-
     plt.plot(
         df_approx["threads"],
         df_approx["speedup"],
@@ -303,7 +303,9 @@ def run(conn):
                 conn, app.bench_name, app.bench_version, type.approx_type
             )
             rates_iter = (
-                rates.itertuples(index=False) if not rates.empty else [None]
+                rates.itertuples(index=False)
+                if not rates["approx_rate"].isna().all()
+                else [None]
             )
             for rate in rates_iter:
                 approx_rate = None if rate is None else rate.approx_rate
