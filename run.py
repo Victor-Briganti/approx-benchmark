@@ -268,6 +268,8 @@ def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
     print(f"Command {cmd}")
 
     try:
+        env = os.environ.copy()
+        env.update(exec_info["env_vars"])
         res = subprocess.run(
             cmd,
             shell=True,
@@ -275,6 +277,7 @@ def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
             capture_output=True,
             text=True,
             check=True,
+            env=env,
         )
 
         # Parse output
@@ -347,6 +350,7 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
                         "bench_version": entry["bench_version"],
                         "bench_path": bench_path,
                         "inputs": entry["inputs"],
+                        "env_vars": variant["env_vars"],
                     }
 
                     make(
