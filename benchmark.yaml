@@ -49,7 +49,7 @@ experiment:
       num_executions: 10
       num_threads: [1, 2, 4, 6]
       inputs:
-        matrix_size: 1024
+        matrix_size: 4096
         output: output.csv
       variants:
         - type: common
@@ -296,8 +296,8 @@ experiment:
       num_executions: 10
       num_threads: [1, 2, 4, 6]
       inputs:
-        matrix_size: 2048
-        num_steps: 5
+        matrix_size: 4096
+        num_steps: 10
         output: output.csv
       variants:
         - type: common
@@ -380,7 +380,7 @@ experiment:
       num_executions: 10
       num_threads: [1, 2, 4, 6]
       inputs:
-        image_size: 2048
+        image_size: 4096
         output_img: output.bmp
       variants:
         - type: common
