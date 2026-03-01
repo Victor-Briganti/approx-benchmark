@@ -193,20 +193,16 @@ def load_file_type(path: str) -> np.ndarray:
 
 
 def smape(reference: str, prediction: str):
-    ref_vals = load_file_type(reference)
-    pred_vals = load_file_type(prediction)
+    ref_vals = load_file_type(reference).astype(np.float64)
+    pred_vals = load_file_type(prediction).astype(np.float64)
     if ref_vals.shape != pred_vals.shape:
-        print(
-            f"[ERROR] Shape mismatch (reference shape) {ref_vals.shape} != {pred_vals.shape} (prediction shape)."
-        )
+        print(f"[ERROR] Shape mismatch: {ref_vals.shape} != {pred_vals.shape}")
         sys.exit(-1)
 
-    denom = np.abs(ref_vals) + np.abs(pred_vals)
-    mask = denom != 0
-    return (
-        np.mean(2.0 * np.abs(ref_vals[mask] - pred_vals[mask]) / denom[mask])
-        * 100.0
-    )
+    epsilon = 1e-10
+    numerator = np.abs(ref_vals - pred_vals)
+    denominator = np.abs(ref_vals) + np.abs(pred_vals) + epsilon
+    return np.mean(2.0 * numerator / denominator) * 100.0
 
 def mcr(reference: str, prediction: str):
     ref_vals = load_file_type(reference)
