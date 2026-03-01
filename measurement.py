@@ -69,7 +69,7 @@ def get_num_threads(
     return conn.execute(sql, params).df()
 
 
-def get_execution_group_id(
+def get_approx_execution_group_id(
     conn,
     app_name: str,
     app_version: int,
@@ -93,6 +93,29 @@ def get_execution_group_id(
         sql += " AND approx_rate = ?"
         params.append(approx_rate)
 
+    df = conn.execute(sql, params).df()
+
+    if df.empty:
+        return None
+
+    return int(df.iloc[0]["id"])
+
+def get_omp_execution_group_id(
+    conn,
+    app_name: str,
+    app_version: int,
+    num_threads: int,
+):
+    sql = """
+        SELECT id
+        FROM ExecutionGroup
+        WHERE bench_name = ? 
+          AND bench_version = ? 
+          AND type = 'omp'
+          AND num_threads = ? 
+    """
+
+    params = [app_name, app_version, num_threads]
     df = conn.execute(sql, params).df()
 
     if df.empty:
@@ -176,7 +199,6 @@ def plot_quality_metrics(
             g_sorted["threads"],
             g_sorted["value"],
             marker="o",
-            label=metric_name,
         )
 
     title = f"{app_name.upper()} {approx_type} "
@@ -201,48 +223,68 @@ def plot_performance(
     app_version,
     approx_type,
     approx_rate,
-    performance,
+    performance_approx,
+    performance_omp,
     baseline: pd.DataFrame,
 ):
-    if not performance:
-        print(f"[WARN] No performance data to plot. App: {app_name}, Type: {approx_type}, Rate: {approx_rate}")
+    if not performance_approx or not performance_omp:
+        print(
+            f"[WARN] Missing performance data. "
+            f"App={app_name}, Type={approx_type}, Rate={approx_rate}"
+        )
         return
 
-    df = pd.concat(performance, ignore_index=True)
-    plt.figure(figsize=(8, 5))
-    all_threads = sorted(df["threads"].unique())
-    df_sorted = df.sort_values("threads")
+    if baseline is None or baseline.empty:
+        print(f"[WARN] Missing baseline for {app_name}")
+        return
 
-    plt.plot(
-        df_sorted["threads"],
-        df_sorted["value"],
-        marker="o",
-        label="Approx",
+    base_val = baseline["value"].iloc[0]
+
+    df_approx = pd.concat(performance_approx, ignore_index=True)
+    df_omp = pd.concat(performance_omp, ignore_index=True)
+
+    df_approx = df_approx.sort_values("threads")
+    df_omp = df_omp.sort_values("threads")
+
+    df_approx["speedup"] = base_val / df_approx["value"]
+    df_omp["speedup"] = base_val / df_omp["value"]
+
+    plt.figure(figsize=(8, 5))
+
+    all_threads = sorted(
+        set(df_approx["threads"]) | set(df_omp["threads"])
     )
 
-    if baseline is not None and not baseline.empty:
-        base_val = baseline["value"].iloc[0]
-        plt.axhline(
-            y=base_val,
-            linestyle="--",
-            color="black",
-            label="Baseline",
-        )
+    plt.plot(
+        df_omp["threads"],
+        df_omp["speedup"],
+        marker="o",
+        linestyle="--",
+        label="omp",
+    )
 
-    title = f"{app_name.upper()} {approx_type}"
+    plt.plot(
+        df_approx["threads"],
+        df_approx["speedup"],
+        marker="o",
+        label=approx_type,
+    )
+
+    title = f"{app_name.upper()} - Speedup - {approx_type}"
     if approx_rate is not None:
         title += f" {approx_rate}"
 
     plt.title(title)
     plt.xlabel("Número de Threads")
-    plt.ylabel("Tempo de Execução (s)")
+    plt.ylabel("Speedup")
     plt.xticks(all_threads)
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
 
     plt.savefig(
-        f"report/{app_name}/performance/{app_name}v{app_version}_{approx_type}_{approx_rate}.pdf"
+        f"report/{app_name}/performance/"
+        f"{app_name}v{app_version}_{approx_type}_{approx_rate}.pdf"
     )
     plt.close()
 
@@ -273,10 +315,11 @@ def run(conn):
                     approx_rate,
                 )
 
-                performance = []
+                performance_approx = []
+                performance_omp = []
                 quality_metrics = []
                 for num_thread in num_threads.itertuples(index=False):
-                    group_id = get_execution_group_id(
+                    group_id = get_approx_execution_group_id(
                         conn,
                         app.bench_name,
                         app.bench_version,
@@ -288,11 +331,23 @@ def run(conn):
                     metric["threads"] = num_thread.num_threads
                     quality_metrics.append(metric)
 
-                    perf = get_performance_value(
+                    perf_approx = get_performance_value(
                         conn, group_id, PERFORMANCE_METRIC
                     )
-                    perf["threads"] = num_thread.num_threads
-                    performance.append(perf)
+                    perf_approx["threads"] = num_thread.num_threads
+                    performance_approx.append(perf_approx)
+
+                    group_id = get_omp_execution_group_id(
+                        conn,
+                        app.bench_name,
+                        app.bench_version,
+                        num_thread.num_threads,
+                    )
+                    perf_omp = get_performance_value(
+                        conn, group_id, PERFORMANCE_METRIC
+                    )
+                    perf_omp["threads"] = num_thread.num_threads
+                    performance_omp.append(perf_omp)
 
                 plot_quality_metrics(
                     app.bench_name,
@@ -313,7 +368,8 @@ def run(conn):
                     app.bench_version,
                     type.approx_type,
                     approx_rate,
-                    performance,
+                    performance_approx,
+                    performance_omp,
                     baseline,
                 )
 
