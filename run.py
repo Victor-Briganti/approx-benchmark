@@ -58,7 +58,9 @@ def save_server(conn, server: Dict[str, Any]):
         print(f"[INFO] Server {server['hostname']} already exists")
 
 
-def select_benchmark(conn, name: str, version: int) -> Optional[Tuple[str, int, str]]:
+def select_benchmark(
+    conn, name: str, version: int
+) -> Optional[Tuple[str, int, str]]:
     return conn.execute(
         "SELECT name, version, path FROM Benchmark WHERE name = ? AND version = ?;",
         (name, version),
@@ -68,7 +70,9 @@ def select_benchmark(conn, name: str, version: int) -> Optional[Tuple[str, int, 
 def save_benchmarks(conn, benchmarks: List[Dict[str, Any]]):
     for bench in benchmarks:
         if select_benchmark(conn, bench["name"], bench["version"]) is None:
-            print(f"[INFO] Saving benchmark {bench['name']} v{bench['version']}")
+            print(
+                f"[INFO] Saving benchmark {bench['name']} v{bench['version']}"
+            )
             conn.execute(
                 """
                 INSERT INTO Benchmark(name, version, path, setup, description)
@@ -130,7 +134,9 @@ def save_exec_envs(conn, group_id: int, envs: Dict[str, Any]):
         )
 
 
-def save_performance(conn, group_id: int, exec_id: int, name: str, value: float):
+def save_performance(
+    conn, group_id: int, exec_id: int, name: str, value: float
+):
     conn.execute(
         "INSERT INTO Performance(group_id, exec_id, name, value) VALUES (?, ?, ?, ?);",
         (group_id, exec_id, name, value),
@@ -140,7 +146,13 @@ def save_performance(conn, group_id: int, exec_id: int, name: str, value: float)
 def save_exec_error(conn, group_id: int, exec_id: int, errno: int, stderr: str):
     conn.execute(
         "INSERT INTO ExecutionError(group_id, exec_id, errno, code, description) VALUES (?, ?, ?, ?, ?);",
-        (group_id, exec_id, errno, os.strerror(-errno) if errno < 0 else "N/A", stderr),
+        (
+            group_id,
+            exec_id,
+            errno,
+            os.strerror(-errno) if errno < 0 else "N/A",
+            stderr,
+        ),
     )
 
 
@@ -191,7 +203,23 @@ def smape(reference: str, prediction: str):
 
     denom = np.abs(ref_vals) + np.abs(pred_vals)
     mask = denom != 0
-    return np.mean(2.0 * np.abs(ref_vals[mask] - pred_vals[mask]) / denom[mask]) * 100.0
+    return (
+        np.mean(2.0 * np.abs(ref_vals[mask] - pred_vals[mask]) / denom[mask])
+        * 100.0
+    )
+
+
+def mae(reference: str, prediction: str):
+    ref_vals = load_file_type(reference)
+    pred_vals = load_file_type(prediction)
+    if ref_vals.shape != pred_vals.shape:
+        print(
+            f"[ERROR] Shape mismatch (reference shape) {ref_vals.shape} != {pred_vals.shape} (prediction shape)."
+        )
+        sys.exit(-1)
+
+    mae = np.mean(np.abs(reference - prediction))
+    return mae / 2 * 100
 
 
 def nrmse(reference: str, prediction: str):
@@ -252,11 +280,25 @@ def metric(
                 float(smape(reference, prediction)),
             )
         case "SSIM":
-            save_metric(conn, gid, exec_id, metric, float(ssim(reference, prediction)))
+            save_metric(
+                conn, gid, exec_id, metric, float(ssim(reference, prediction))
+            )
         case "NRMSE":
-            save_metric(conn, gid, exec_id, metric, float(nrmse(reference, prediction)))
+            save_metric(
+                conn, gid, exec_id, metric, float(nrmse(reference, prediction))
+            )
         case "MCR":
-            save_metric(conn, gid, exec_id, metric, float(mcr(reference, prediction)))
+            save_metric(
+                conn, gid, exec_id, metric, float(mcr(reference, prediction))
+            )
+        case "MAE":
+            save_metric(
+                conn,
+                gid,
+                exec_id,
+                metric,
+                float(mae(reference, prediction)),
+            )
         case _:
             print(f"[ERROR] {metric} is currently not supported")
 
@@ -294,7 +336,11 @@ def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
                         save_performance(conn, group_id, exec_id, k, data[k])
                 elif data.get("event"):
                     save_performance(
-                        conn, group_id, exec_id, data["event"], data["counter-value"]
+                        conn,
+                        group_id,
+                        exec_id,
+                        data["event"],
+                        data["counter-value"],
                     )
             except json.JSONDecodeError:
                 continue
@@ -326,7 +372,9 @@ def pos_process(cmd: str):
 
 def execution(conn, executions: List[Dict[str, Any]], server: str):
     for entry in executions:
-        res = select_benchmark(conn, entry["bench_name"], entry["bench_version"])
+        res = select_benchmark(
+            conn, entry["bench_name"], entry["bench_version"]
+        )
         if not res:
             continue
         _, _, bench_path = res

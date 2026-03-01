@@ -153,7 +153,7 @@ def plot_quality_metrics(
     plt.legend()
     plt.tight_layout()
     plt.savefig(
-        f"report/{app_name}/{app_name}v{app_version}_{approx_type}_{approx_rate}.pdf"
+        f"report/{app_name}/metric/{app_name}v{app_version}_{approx_type}_{approx_rate}.pdf"
     )
     plt.close()
 
@@ -201,20 +201,20 @@ def run(conn):
                     metric["threads"] = num_thread.num_threads
                     quality_metrics.append(metric)
 
-                # for metric in quality_metrics:
-                #     if metric.empty:
-                #         print(
-                #             f"[WARN] No metrics for {app.bench_name} {type.approx_type} {approx_rate} threads={num_thread.num_threads}"
-                #         )
-                #         sys.exit(-1)
+                for metric in quality_metrics:
+                    if metric.empty:
+                        print(
+                            f"[WARN] No metrics for {app.bench_name} {type.approx_type} {approx_rate} threads={num_thread.num_threads}"
+                        )
+                        sys.exit(-1)
 
-                #     plot_quality_metrics(
-                #         app.bench_name,
-                #         app.bench_version,
-                #         type.approx_type,
-                #         approx_rate,
-                #         quality_metrics,
-                #     )
+                    plot_quality_metrics(
+                        app.bench_name,
+                        app.bench_version,
+                        type.approx_type,
+                        approx_rate,
+                        quality_metrics,
+                    )
 
 
 if __name__ == "__main__":
