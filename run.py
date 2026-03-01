@@ -218,7 +218,7 @@ def mae(reference: str, prediction: str):
         )
         sys.exit(-1)
 
-    mae = np.mean(np.abs(reference - prediction))
+    mae = np.mean(np.abs(ref_vals - pred_vals))
     return mae / 2 * 100
 
 
