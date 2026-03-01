@@ -194,16 +194,22 @@ def smape(reference: str, prediction: str):
     return np.mean(2.0 * np.abs(ref_vals[mask] - pred_vals[mask]) / denom[mask]) * 100.0
 
 
-def rmse(reference: str, prediction: str):
+def nrmse(reference: str, prediction: str):
     ref_vals = load_file_type(reference)
     pred_vals = load_file_type(prediction)
+
     if ref_vals.shape != pred_vals.shape:
         print(
             f"[ERROR] Shape mismatch (reference shape) {ref_vals.shape} != {pred_vals.shape} (prediction shape)."
         )
         sys.exit(-1)
 
-    return np.sqrt(np.mean((ref_vals - pred_vals) ** 2))
+    rmse_val = np.sqrt(np.mean((ref_vals - pred_vals) ** 2))
+    norm = np.mean(np.abs(ref_vals))
+    if norm == 0:
+        return 0.0
+
+    return (rmse_val / norm) * 100.0
 
 
 def mcr(reference: str, prediction: str):
@@ -247,8 +253,8 @@ def metric(
             )
         case "SSIM":
             save_metric(conn, gid, exec_id, metric, float(ssim(reference, prediction)))
-        case "RMSE":
-            save_metric(conn, gid, exec_id, metric, float(rmse(reference, prediction)))
+        case "NRMSE":
+            save_metric(conn, gid, exec_id, metric, float(nrmse(reference, prediction)))
         case "MCR":
             save_metric(conn, gid, exec_id, metric, float(mcr(reference, prediction)))
         case _:
