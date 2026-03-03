@@ -47,9 +47,9 @@ experiment:
     - bench_name: 2mm
       bench_version: 0
       num_executions: 10
-      num_threads: [1, 2, 4, 6]
+      num_threads: [1, 2, 4, 8]
       inputs:
-        matrix_size: 4096
+        matrix_size: 2048
         output: output.csv
       variants:
         - type: common
@@ -129,7 +129,7 @@ experiment:
     - bench_name: correlation
       bench_version: 0
       num_executions: 10
-      num_threads: [1, 2, 4, 6]
+      num_threads: [1, 2, 4, 8]
       inputs:
         input: $PATH/input/input.csv
         output: output.csv
@@ -211,7 +211,7 @@ experiment:
     - bench_name: deriche
       bench_version: 0
       num_executions: 10
-      num_threads: [1, 2, 4, 6]
+      num_threads: [1, 2, 4, 8]
       inputs:
         alpha: 0.5
         input: $PATH/input/sunflower.jpg
@@ -294,9 +294,9 @@ experiment:
     - bench_name: jacobi2d
       bench_version: 0
       num_executions: 10
-      num_threads: [1, 2, 4, 6]
+      num_threads: [1, 2, 4, 8]
       inputs:
-        matrix_size: 4096
+        matrix_size: 2048
         num_steps: 10
         output: output.csv
       variants:
@@ -378,9 +378,9 @@ experiment:
     - bench_name: mandelbrot
       bench_version: 0
       num_executions: 10
-      num_threads: [1, 2, 4, 6]
+      num_threads: [1, 2, 4, 8]
       inputs:
-        image_size: 4096
+        image_size: 2048
         output_img: output.bmp
       variants:
         - type: common
@@ -460,7 +460,7 @@ experiment:
     - bench_name: pi
       bench_version: 0
       num_executions: 10
-      num_threads: [1, 2, 4, 6]
+      num_threads: [1, 2, 4, 8]
       inputs:
         num_iterations: 100000000
         file_output: output.csv
@@ -542,7 +542,7 @@ experiment:
     - bench_name: kmeans
       bench_version: 0
       num_executions: 10
-      num_threads: [1, 2, 4, 6]
+      num_threads: [1, 2, 4, 8]
       inputs:
         num_clusters: 10
         iterations: 100
