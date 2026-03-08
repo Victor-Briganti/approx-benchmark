@@ -108,6 +108,10 @@ double piMonteCarlo(uint64_t numIterations) {
     RandState state = {ompID, ompID + 1};
 #endif
 
+#ifdef FASTMATH
+#pragma omp approx fastmath
+    {
+#endif
 #ifdef PERFO_LARGE
 #pragma omp for approx perfo(large, DROP) schedule(static)
 #endif
@@ -120,11 +124,7 @@ double piMonteCarlo(uint64_t numIterations) {
 #ifdef OMP
 #pragma omp for schedule(static)
 #endif
-    for (uint64_t i = 0; i < numIterations; i++) {
-#ifdef FASTMATH
-#pragma omp approx fastmath
-      {
-#endif
+      for (uint64_t i = 0; i < numIterations; i++) {
 #ifdef MEMO
 #pragma omp approx memo(DROP) output(hit)
         {
@@ -141,10 +141,10 @@ double piMonteCarlo(uint64_t numIterations) {
 #ifdef MEMO
         }
 #endif
-#ifdef FASTMATH
       }
-#endif
+#ifdef FASTMATH
     }
+#endif
   }
 
   return 4.0 * hit / numIterations;

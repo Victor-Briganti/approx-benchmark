@@ -94,12 +94,6 @@ void init_matrix(double *&matrix, size_t size, bool fill = false) {
   }
 }
 
-size_t block_size(size_t matrixSize) {
-  size_t block = (L1_SIZE * matrixSize) / (3 * sizeof(double));
-  double block_sqrt = round(sqrt(block));
-  return static_cast<size_t>(block_sqrt);
-}
-
 //===------------------------------------------------------------------------===
 // Main
 //===------------------------------------------------------------------------===
@@ -137,8 +131,6 @@ int main(int argc, char **argv) {
 
 #pragma omp parallel shared(A, B, C, D) num_threads(NUM_THREADS)
     {
-      size_t BS = block_size(matrixSize);
-
 #ifdef PERFO_LARGE
 #pragma omp for approx perfo(large, DROP) schedule(static)
 #endif
@@ -151,25 +143,21 @@ int main(int argc, char **argv) {
 #ifdef OMP
 #pragma omp for schedule(static)
 #endif
-      for (size_t ii = 0; ii < matrixSize; ii += BS) {
-        for (size_t kk = 0; kk < matrixSize; kk += BS) {
-          for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
-            for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
-              double a_val = A[i * matrixSize + k];
-              for (size_t j = 0; j < matrixSize; ++j) {
+      for (size_t i = 0; i < matrixSize; i++) {
+        for (size_t k = 0; k < matrixSize; k++) {
+          double a_val = A[i * matrixSize + k];
+          for (size_t j = 0; j < matrixSize; j++) {
 #ifdef MEMO
-                double res = 0;
-                double b_val = B[k * matrixSize + j];
+            double res = 0;
+            double b_val = B[k * matrixSize + j];
 #pragma omp approx memo(DROP) output(res)
-                {
-                  res = a_val * b_val;
-                }
-                C[i * matrixSize + j] += res;
-#else
-              C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
-#endif
-              }
+            {
+              res = a_val * b_val;
             }
+            C[i * matrixSize + j] += res;
+#else
+            C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
+#endif
           }
         }
       }
@@ -186,25 +174,21 @@ int main(int argc, char **argv) {
 #ifdef OMP
 #pragma omp for schedule(static)
 #endif
-      for (size_t ii = 0; ii < matrixSize; ii += BS) {
-        for (size_t kk = 0; kk < matrixSize; kk += BS) {
-          for (size_t i = ii; i < std::min(ii + BS, matrixSize); ++i) {
-            for (size_t k = kk; k < std::min(kk + BS, matrixSize); ++k) {
-              double c_val = C[i * matrixSize + k];
-              for (size_t j = 0; j < matrixSize; ++j) {
+      for (size_t i = 0; i < matrixSize; i++) {
+        for (size_t k = 0; k < matrixSize; k++) {
+          double c_val = C[i * matrixSize + k];
+          for (size_t j = 0; j < matrixSize; j++) {
 #ifdef MEMO
-                double res = 0;
-                double d_val = D[k * matrixSize + j];
+            double res = 0;
+            double d_val = D[k * matrixSize + j];
 #pragma omp approx memo(DROP) output(res)
-                {
-                  res = c_val * d_val;
-                }
-                E[i * matrixSize + j] += c_val * d_val;
-#else
-              E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
-#endif
-              }
+            {
+              res = c_val * d_val;
             }
+            E[i * matrixSize + j] += res;
+#else
+            E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
+#endif
           }
         }
       }
