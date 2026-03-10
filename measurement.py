@@ -15,7 +15,7 @@ def get_approx_apps(conn):
         SELECT bench_name, MAX(bench_version) AS bench_version
         FROM ExecutionGroup
         WHERE approx_type IS NOT NULL
-        GROUP BY bench_name
+        GROUP BY bench_name;
     """).df()
 
 
@@ -25,7 +25,7 @@ def get_approx_types(conn, app_name: str, app_version: int):
         SELECT approx_type
         FROM ExecutionGroup
         WHERE bench_name = ? AND bench_version = ? AND approx_type IS NOT NULL
-        GROUP BY approx_type
+        GROUP BY approx_type;
     """,
         (app_name, app_version),
     ).df()
@@ -37,7 +37,7 @@ def get_approx_rates(conn, app_name: str, app_version: int, approx_type: str):
         SELECT approx_rate
         FROM ExecutionGroup
         WHERE bench_name = ? AND bench_version = ? AND approx_type = ?
-        GROUP BY approx_rate
+        GROUP BY approx_rate;
     """,
         (app_name, app_version, approx_type),
     ).df()
@@ -55,7 +55,7 @@ def get_num_threads(
         FROM ExecutionGroup
         WHERE bench_name = ? 
           AND bench_version = ? 
-          AND approx_type = ? 
+          AND approx_type = ?
     """
 
     params = [app_name, app_version, approx_type]
@@ -65,7 +65,7 @@ def get_num_threads(
         sql += " AND approx_rate = ?"
         params.append(approx_rate)
 
-    sql += " GROUP BY num_threads"
+    sql += " GROUP BY num_threads;"
     return conn.execute(sql, params).df()
 
 
@@ -83,14 +83,14 @@ def get_approx_execution_group_id(
         WHERE bench_name = ? 
           AND bench_version = ? 
           AND approx_type = ? 
-          AND num_threads = ? 
+          AND num_threads = ?
     """
 
     params = [app_name, app_version, approx_type, num_threads]
     if approx_rate is None:
-        sql += " AND approx_rate IS NULL"
+        sql += " AND approx_rate IS NULL;"
     else:
-        sql += " AND approx_rate = ?"
+        sql += " AND approx_rate = ?;"
         params.append(approx_rate)
 
     df = conn.execute(sql, params).df()
@@ -113,8 +113,8 @@ def get_omp_execution_group_id(
         WHERE bench_name = ? 
           AND bench_version = ? 
           AND type = 'omp'
-          AND num_threads = ? 
-    """
+          AND num_threads = ?;
+        """
 
     params = [app_name, app_version, num_threads]
     df = conn.execute(sql, params).df()
@@ -136,7 +136,7 @@ def get_base_execution_group_id(
         WHERE bench_name = ? 
           AND bench_version = ? 
           AND type = 'omp'
-          AND num_threads = 1 
+          AND num_threads = 1;
     """
     params = [app_name, app_version]
     df = conn.execute(sql, params).df()
@@ -156,8 +156,8 @@ def get_quality_metric(
         SELECT name, group_id, MEAN(value) AS value
         FROM QualityMetrics
         WHERE group_id = ? 
-        GROUP BY name, group_id
-    """,
+        GROUP BY name, group_id;
+        """,
         (group_id,),
     ).df()
 
@@ -172,7 +172,7 @@ def get_performance_value(
         SELECT group_id, MEAN(value) AS value
         FROM Performance
         WHERE group_id = ? AND name = ?
-        GROUP BY group_id
+        GROUP BY group_id;
     """,
         (group_id, value_name),
     ).df()
@@ -212,6 +212,10 @@ def plot_quality_metrics(
     plt.title(title)
     plt.xlabel("Número de Threads")
     plt.ylabel(f"{df['name'].iloc[0].upper()} %")
+    
+    # Disable cientific notation before plotting the graph
+    plt.ticklabel_format(useOffset=False, style='plain', axis='y')
+
     plt.xticks(all_threads)
     plt.grid(True, alpha=0.3)
     plt.legend()
