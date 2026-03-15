@@ -31,13 +31,13 @@ def get_approx_types(conn, app_name: str, app_version: int):
     ).df()
 
 
-def get_approx_rates(conn, app_name: str, app_version: int, approx_type: str):
+def get_approx_configs(conn, app_name: str, app_version: int, approx_type: str):
     return conn.execute(
         """
-        SELECT approx_rate
+        SELECT approx_rate, approx_entries
         FROM ExecutionGroup
         WHERE bench_name = ? AND bench_version = ? AND approx_type = ?
-        GROUP BY approx_rate;
+        GROUP BY approx_rate, approx_entries;
     """,
         (app_name, app_version, approx_type),
     ).df()
@@ -49,6 +49,7 @@ def get_num_threads(
     app_version: int,
     approx_type: str,
     approx_rate: int | None = None,
+    approx_entries: int | None = None,
 ):
     sql = """
         SELECT num_threads
@@ -65,6 +66,12 @@ def get_num_threads(
         sql += " AND approx_rate = ?"
         params.append(approx_rate)
 
+    if approx_entries is None:
+        sql += " AND approx_entries IS NULL"
+    else:
+        sql += " AND approx_entries = ?"
+        params.append(approx_entries)
+
     sql += " GROUP BY num_threads;"
     return conn.execute(sql, params).df()
 
@@ -76,6 +83,7 @@ def get_approx_execution_group_id(
     approx_type: str,
     num_threads: int,
     approx_rate: int | None = None,
+    approx_entries: int | None = None,
 ):
     sql = """
         SELECT id
@@ -88,10 +96,16 @@ def get_approx_execution_group_id(
 
     params = [app_name, app_version, approx_type, num_threads]
     if approx_rate is None:
-        sql += " AND approx_rate IS NULL;"
+        sql += " AND approx_rate IS NULL"
     else:
-        sql += " AND approx_rate = ?;"
+        sql += " AND approx_rate = ?"
         params.append(approx_rate)
+
+    if approx_entries is None:
+        sql += " AND approx_entries IS NULL;"
+    else:
+        sql += " AND approx_entries = ?;"
+        params.append(approx_entries)
 
     df = conn.execute(sql, params).df()
 
@@ -184,11 +198,11 @@ def get_performance_value(
 
 
 def plot_quality_metrics(
-    app_name, app_version, approx_type, approx_rate, metrics
+    app_name, app_version, approx_type, approx_rate, approx_entries, metrics
 ):
     if not metrics:
         print(
-            f"[WARN] No metrics to plot. App: {app_name}, Type: {approx_type}, Rate: {approx_rate}"
+            f"[WARN] No metrics to plot. App: {app_name}, Type: {approx_type}, Rate: {approx_rate}, Entries: {approx_entries}"
         )
         return
 
@@ -207,22 +221,27 @@ def plot_quality_metrics(
 
     title = f"{app_name.upper()} {approx_type} "
     if approx_rate is not None:
-        title += f"{approx_rate}"
+        title += f"T:{approx_rate}"
+    if approx_entries is not None:
+        title += f" E:{approx_entries}"
 
     plt.title(title)
     plt.xlabel("Número de Threads")
     plt.ylabel(f"{df['name'].iloc[0].upper()} %")
-    
+
     # Disable cientific notation before plotting the graph
-    plt.ticklabel_format(useOffset=False, style='plain', axis='y')
+    plt.ticklabel_format(useOffset=False, style="plain", axis="y")
 
     plt.xticks(all_threads)
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(
-        f"report/{app_name}/metric/{app_name}v{app_version}_{approx_type}_{approx_rate}.pdf"
-    )
+
+    filename = f"{app_name}v{app_version}_{approx_type}_{approx_rate}"
+    if approx_entries is not None:
+        filename += f"_{approx_entries}"
+
+    plt.savefig(f"report/{app_name}/metric/{filename}.pdf")
     plt.close()
 
 
@@ -231,6 +250,7 @@ def plot_performance(
     app_version,
     approx_type,
     approx_rate,
+    approx_entries,
     performance_approx,
     performance_omp,
     baseline: pd.DataFrame,
@@ -238,7 +258,7 @@ def plot_performance(
     if not performance_approx or not performance_omp:
         print(
             f"[WARN] Missing performance data. "
-            f"App={app_name}, Type={approx_type}, Rate={approx_rate}"
+            f"App={app_name}, Type={approx_type}, Rate={approx_rate}, Entries={approx_entries}"
         )
         return
 
@@ -276,7 +296,9 @@ def plot_performance(
 
     title = f"{app_name.upper()} - Speedup - {approx_type}"
     if approx_rate is not None:
-        title += f" {approx_rate}"
+        title += f" T:{approx_rate}"
+    if approx_entries is not None:
+        title += f" E:{approx_entries}"
 
     plt.title(title)
     plt.xlabel("Número de Threads")
@@ -286,10 +308,11 @@ def plot_performance(
     plt.legend()
     plt.tight_layout()
 
-    plt.savefig(
-        f"report/{app_name}/performance/"
-        f"{app_name}v{app_version}_{approx_type}_{approx_rate}.pdf"
-    )
+    filename = f"{app_name}v{app_version}_{approx_type}_{approx_rate}"
+    if approx_entries is not None:
+        filename += f"_{approx_entries}"
+
+    plt.savefig(f"report/{app_name}/performance/{filename}.pdf")
     plt.close()
 
 
@@ -303,22 +326,23 @@ def run(conn):
     for app in apps.itertuples(index=False):
         types = get_approx_types(conn, app.bench_name, app.bench_version)
         for type in types.itertuples(index=False):
-            rates = get_approx_rates(
+            configs = get_approx_configs(
                 conn, app.bench_name, app.bench_version, type.approx_type
             )
-            rates_iter = (
-                rates.itertuples(index=False)
-                if not rates["approx_rate"].isna().all()
-                else [None]
-            )
-            for rate in rates_iter:
-                approx_rate = None if rate is None else rate.approx_rate
+            for config in configs.itertuples(index=False):
+                approx_rate = (
+                    config.approx_rate if pd.notna(config.approx_rate) else None
+                )
+                approx_entries = (
+                    config.approx_entries if pd.notna(config.approx_entries) else None
+                )
                 num_threads = get_num_threads(
                     conn,
                     app.bench_name,
                     app.bench_version,
                     type.approx_type,
                     approx_rate,
+                    approx_entries,
                 )
 
                 performance_approx = []
@@ -332,6 +356,7 @@ def run(conn):
                         type.approx_type,
                         num_thread.num_threads,
                         approx_rate,
+                        approx_entries,
                     )
                     metric = get_quality_metric(conn, group_id)
                     metric["threads"] = num_thread.num_threads
@@ -349,9 +374,7 @@ def run(conn):
                         app.bench_version,
                         num_thread.num_threads,
                     )
-                    perf_omp = get_performance_value(
-                        conn, group_id, PERFORMANCE_METRIC
-                    )
+                    perf_omp = get_performance_value(conn, group_id, PERFORMANCE_METRIC)
                     perf_omp["threads"] = num_thread.num_threads
                     performance_omp.append(perf_omp)
 
@@ -360,6 +383,7 @@ def run(conn):
                     app.bench_version,
                     type.approx_type,
                     approx_rate,
+                    approx_entries,
                     quality_metrics,
                 )
 
@@ -374,6 +398,7 @@ def run(conn):
                     app.bench_version,
                     type.approx_type,
                     approx_rate,
+                    approx_entries,
                     performance_approx,
                     performance_omp,
                     baseline,
