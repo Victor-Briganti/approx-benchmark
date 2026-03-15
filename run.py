@@ -58,9 +58,7 @@ def save_server(conn, server: Dict[str, Any]):
         print(f"[INFO] Server {server['hostname']} already exists")
 
 
-def select_benchmark(
-    conn, name: str, version: int
-) -> Optional[Tuple[str, int, str]]:
+def select_benchmark(conn, name: str, version: int) -> Optional[Tuple[str, int, str]]:
     return conn.execute(
         "SELECT name, version, path FROM Benchmark WHERE name = ? AND version = ?;",
         (name, version),
@@ -70,9 +68,7 @@ def select_benchmark(
 def save_benchmarks(conn, benchmarks: List[Dict[str, Any]]):
     for bench in benchmarks:
         if select_benchmark(conn, bench["name"], bench["version"]) is None:
-            print(
-                f"[INFO] Saving benchmark {bench['name']} v{bench['version']}"
-            )
+            print(f"[INFO] Saving benchmark {bench['name']} v{bench['version']}")
             conn.execute(
                 """
                 INSERT INTO Benchmark(name, version, path, setup, description)
@@ -134,9 +130,7 @@ def save_exec_envs(conn, group_id: int, envs: Dict[str, Any]):
         )
 
 
-def save_performance(
-    conn, group_id: int, exec_id: int, name: str, value: float
-):
+def save_performance(conn, group_id: int, exec_id: int, name: str, value: float):
     conn.execute(
         "INSERT INTO Performance(group_id, exec_id, name, value) VALUES (?, ?, ?, ?);",
         (group_id, exec_id, name, value),
@@ -192,17 +186,23 @@ def load_file_type(path: str) -> np.ndarray:
     return df.to_numpy(dtype=np.float64)
 
 
-def smape(reference: str, prediction: str):
+def mape(reference: str, prediction: str):
     ref_vals = load_file_type(reference).astype(np.float64)
     pred_vals = load_file_type(prediction).astype(np.float64)
     if ref_vals.shape != pred_vals.shape:
         print(f"[ERROR] Shape mismatch: {ref_vals.shape} != {pred_vals.shape}")
         sys.exit(-1)
 
-    epsilon = 1e-10
     numerator = np.abs(ref_vals - pred_vals)
-    denominator = np.abs(ref_vals) + np.abs(pred_vals) + epsilon
-    return np.mean(2.0 * numerator / denominator) * 100.0
+    denominator = np.abs(ref_vals)
+    
+    with np.errstate(divide='ignore', invalid='ignore'):
+        res = np.mean(numerator / denominator) * 100.0
+    
+    if np.isnan(res):
+        return 100.0
+    return min(res, 100.0)
+
 
 def mcr(reference: str, prediction: str):
     ref_vals = load_file_type(reference)
@@ -235,22 +235,18 @@ def metric(
     prediction: str,
 ):
     match metric:
-        case "SMAPE":
+        case "MAPE":
             save_metric(
                 conn,
                 gid,
                 exec_id,
                 metric,
-                float(smape(reference, prediction)),
+                float(mape(reference, prediction)),
             )
         case "SSIM":
-            save_metric(
-                conn, gid, exec_id, metric, float(ssim(reference, prediction))
-            )
+            save_metric(conn, gid, exec_id, metric, float(ssim(reference, prediction)))
         case "MCR":
-            save_metric(
-                conn, gid, exec_id, metric, float(mcr(reference, prediction))
-            )
+            save_metric(conn, gid, exec_id, metric, float(mcr(reference, prediction)))
         case _:
             print(f"[ERROR] {metric} is currently not supported")
 
@@ -324,9 +320,7 @@ def pos_process(cmd: str):
 
 def execution(conn, executions: List[Dict[str, Any]], server: str):
     for entry in executions:
-        res = select_benchmark(
-            conn, entry["bench_name"], entry["bench_version"]
-        )
+        res = select_benchmark(conn, entry["bench_name"], entry["bench_version"])
         if not res:
             continue
         _, _, bench_path = res
