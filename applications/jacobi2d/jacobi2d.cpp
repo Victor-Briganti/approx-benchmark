@@ -128,7 +128,7 @@ void jacobi_2d(int steps, size_t size, double *A, double *B) {
           double A4 = A[(i - 1) * size + j];
           double A5 = A[(i + 1) * size + j];
           double res = 0.0;
-#pragma omp approx memo(DROP) output(res)
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(res)
           {
             res = (A1 + A2 + A3 + A4 + A5) / 4;
           }
@@ -166,7 +166,7 @@ void jacobi_2d(int steps, size_t size, double *A, double *B) {
           double B4 = B[(i - 1) * size + j];
           double B5 = B[(i + 1) * size + j];
           double res = 0.0;
-#pragma omp approx memo(DROP) output(res)
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(res)
           {
             res = (B1 + B2 + B3 + B4 + B5) / 4;
           }

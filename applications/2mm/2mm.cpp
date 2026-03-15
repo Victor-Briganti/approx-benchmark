@@ -62,7 +62,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
@@ -150,7 +149,7 @@ int main(int argc, char **argv) {
 #ifdef MEMO
             double res = 0;
             double b_val = B[k * matrixSize + j];
-#pragma omp approx memo(DROP) output(res)
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(res)
             {
               res = a_val * b_val;
             }
@@ -181,7 +180,7 @@ int main(int argc, char **argv) {
 #ifdef MEMO
             double res = 0;
             double d_val = D[k * matrixSize + j];
-#pragma omp approx memo(DROP) output(res)
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(res)
             {
               res = c_val * d_val;
             }

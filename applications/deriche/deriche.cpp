@@ -159,7 +159,7 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
 #ifdef MEMO
           float in = imageIn[j * width + i];
           float res = 0.0f;
-#pragma omp approx memo(DROP) output(res)
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(res)
           {
             res = a1 * in + a2 * xm1 + b1 * ym1 + b2 * ym2;
           }
@@ -195,7 +195,7 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
           const float prev = imageOut[j * width + i];
 #ifdef MEMO
           float res = 0.0f;
-#pragma omp approx memo(DROP) output(res)
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(res)
           {
             res = a3 * xp1 + a4 * xp2 + b1 * yp1 + b2 * yp2;
           }
@@ -230,7 +230,7 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
           const float prev = imageOut[j * width + i];
 #ifdef MEMO
           float res = 0.0f;
-#pragma omp approx memo(DROP) output(res)
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(res)
           {
             res = a5 * prev + a6 * tm1 + b1 * ym1 + b2 * ym2;
           }
@@ -266,7 +266,7 @@ float *deriche(const float *imageIn, int width, int height, float alpha) {
           const float prev = imageOut[j * width + i];
 #ifdef MEMO
           float res = 0.0f;
-#pragma omp approx memo(DROP) output(res)
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(res)
           {
             res = a7 * tp1 + a8 * tp2 + b1 * yp1 + b2 * yp2;
           }

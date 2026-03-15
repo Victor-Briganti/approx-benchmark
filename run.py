@@ -90,13 +90,14 @@ def save_benchmarks(conn, benchmarks: List[Dict[str, Any]]):
 def save_execution_group(conn, exec_info: Dict[str, Any]) -> int:
     return conn.execute(
         """
-        INSERT INTO ExecutionGroup(type, approx_rate, approx_type, compile_command, num_threads, server, bench_name, bench_version)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO ExecutionGroup(type, approx_rate, approx_entries, approx_type, compile_command, num_threads, server, bench_name, bench_version)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id;
         """,
         (
             exec_info["type"],
             exec_info["approx_rate"],
+            exec_info.get("approx_entries"),
             exec_info["approx_type"],
             exec_info["compile_command"],
             exec_info["num_threads"],
@@ -195,10 +196,10 @@ def mape(reference: str, prediction: str):
 
     numerator = np.abs(ref_vals - pred_vals)
     denominator = np.abs(ref_vals)
-    
-    with np.errstate(divide='ignore', invalid='ignore'):
+
+    with np.errstate(divide="ignore", invalid="ignore"):
         res = np.mean(numerator / denominator) * 100.0
-    
+
     if np.isnan(res):
         return 100.0
     return min(res, 100.0)
@@ -337,75 +338,84 @@ def execution(conn, executions: List[Dict[str, Any]], server: str):
             iterations = 1 if is_base else entry["num_executions"]
 
             for t in threads:
-                for rate in variant.get("approx_rates", [None]):
-                    group_meta = {
-                        "type": variant["type"],
-                        "approx_rate": rate,
-                        "approx_type": variant.get("approx_type", None),
-                        "compile_command": variant["compile"],
-                        "num_threads": t,
-                        "server": server,
-                        "bench_name": entry["bench_name"],
-                        "bench_version": entry["bench_version"],
-                        "bench_path": bench_path,
-                        "inputs": entry["inputs"],
-                        "env_vars": variant["env_vars"],
-                    }
+                approx_rates = variant.get("approx_rates", [None])
+                approx_entries = variant.get("approx_entries", [None])
 
-                    make(
-                        variant["compile"]
-                        .replace("$PATH", bench_path)
-                        .replace("$NUM_THREADS", str(t))
-                        .replace("$APPROX_RATE", str(rate))
-                    )
-                    gid = save_execution_group(conn, group_meta)
-                    if is_base:
-                        baseline_gid = gid
+                for rate in approx_rates:
+                    for entries in approx_entries:
+                        group_meta = {
+                            "type": variant["type"],
+                            "approx_rate": rate,
+                            "approx_entries": entries,
+                            "approx_type": variant.get("approx_type", None),
+                            "compile_command": variant["compile"],
+                            "num_threads": t,
+                            "server": server,
+                            "bench_name": entry["bench_name"],
+                            "bench_version": entry["bench_version"],
+                            "bench_path": bench_path,
+                            "inputs": entry["inputs"],
+                            "env_vars": variant["env_vars"],
+                        }
 
-                    save_exec_input(conn, gid, entry["inputs"])
-                    save_exec_envs(conn, gid, variant["env_vars"])
-
-                    for id in range(iterations):
-                        save_execution_run(conn, gid, id)
-                        run_benchmark(conn, gid, id, group_meta)
-                        update_exec_endtime(conn, gid, id)
-
-                        pos_process(
-                            variant["pos_processing"]
+                        make(
+                            variant["compile"]
                             .replace("$PATH", bench_path)
                             .replace("$NUM_THREADS", str(t))
                             .replace("$APPROX_RATE", str(rate))
-                            .replace("$ID_RUN", str(id))
-                            .replace("$ID_GROUP", str(gid))
+                            .replace("$APPROX_ENTRIES", str(entries))
                         )
-
+                        gid = save_execution_group(conn, group_meta)
                         if is_base:
-                            baseline_id = id
-                            continue
+                            baseline_gid = gid
 
-                        if variant.get("metric") is not None:
-                            mtype = variant["metric"]["type"]
-                            pred = (
-                                variant["metric"]["prediction"]
+                        save_exec_input(conn, gid, entry["inputs"])
+                        save_exec_envs(conn, gid, variant["env_vars"])
+
+                        for id in range(iterations):
+                            save_execution_run(conn, gid, id)
+                            run_benchmark(conn, gid, id, group_meta)
+                            update_exec_endtime(conn, gid, id)
+
+                            pos_process(
+                                variant["pos_processing"]
                                 .replace("$PATH", bench_path)
-                                .replace("$APPROX_RATE", str(rate))
                                 .replace("$NUM_THREADS", str(t))
-                                .replace("$ID_GROUP_BASE", str(baseline_gid))
+                                .replace("$APPROX_RATE", str(rate))
+                                .replace("$APPROX_ENTRIES", str(entries))
                                 .replace("$ID_RUN", str(id))
                                 .replace("$ID_GROUP", str(gid))
-                                .replace("$ID_BASE", str(baseline_id))
                             )
-                            ref = (
-                                variant["metric"]["reference"]
-                                .replace("$PATH", bench_path)
-                                .replace("$APPROX_RATE", str(rate))
-                                .replace("$NUM_THREADS", str(t))
-                                .replace("$ID_GROUP_BASE", str(baseline_gid))
-                                .replace("$ID_RUN", str(id))
-                                .replace("$ID_GROUP", str(gid))
-                                .replace("$ID_BASE", str(baseline_id))
-                            )
-                            metric(conn, gid, id, mtype, pred, ref)
+
+                            if is_base:
+                                baseline_id = id
+                                continue
+
+                            if variant.get("metric") is not None:
+                                mtype = variant["metric"]["type"]
+                                pred = (
+                                    variant["metric"]["prediction"]
+                                    .replace("$PATH", bench_path)
+                                    .replace("$APPROX_RATE", str(rate))
+                                    .replace("$APPROX_ENTRIES", str(entries))
+                                    .replace("$NUM_THREADS", str(t))
+                                    .replace("$ID_GROUP_BASE", str(baseline_gid))
+                                    .replace("$ID_RUN", str(id))
+                                    .replace("$ID_GROUP", str(gid))
+                                    .replace("$ID_BASE", str(baseline_id))
+                                )
+                                ref = (
+                                    variant["metric"]["reference"]
+                                    .replace("$PATH", bench_path)
+                                    .replace("$APPROX_RATE", str(rate))
+                                    .replace("$APPROX_ENTRIES", str(entries))
+                                    .replace("$NUM_THREADS", str(t))
+                                    .replace("$ID_GROUP_BASE", str(baseline_gid))
+                                    .replace("$ID_RUN", str(id))
+                                    .replace("$ID_GROUP", str(gid))
+                                    .replace("$ID_BASE", str(baseline_id))
+                                )
+                                metric(conn, gid, id, mtype, pred, ref)
 
 
 def run_plan(conn, plan_path: str):

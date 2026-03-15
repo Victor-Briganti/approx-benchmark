@@ -117,7 +117,8 @@ experiment:
         - type: approx
           approx_type: memo
           approx_rates: [10, 100, 500, 1000, 5000]
-          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
+          approx_entries: [100, 250, 500, 1000]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE ENTRIES=$APPROX_ENTRIES -C $PATH memo"
           pos_processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
             type: MAPE
@@ -199,7 +200,8 @@ experiment:
         - type: approx
           approx_type: memo
           approx_rates: [10, 100, 500, 1000, 5000]
-          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
+          approx_entries: [100, 250, 500, 1000]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE ENTRIES=$APPROX_ENTRIES -C $PATH memo"
           pos_processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
             type: MAPE
@@ -282,7 +284,8 @@ experiment:
         - type: approx
           approx_type: memo
           approx_rates: [10, 100, 500, 1000, 5000]
-          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
+          approx_entries: [100, 250, 500, 1000]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE ENTRIES=$APPROX_ENTRIES -C $PATH memo"
           pos_processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
           metric:
             type: SSIM
@@ -366,7 +369,8 @@ experiment:
         - type: approx
           approx_type: memo
           approx_rates: [10, 20, 30, 40, 50]
-          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
+          approx_entries: [100, 250, 500, 1000]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE ENTRIES=$APPROX_ENTRIES -C $PATH memo"
           pos_processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
             type: MAPE
@@ -448,7 +452,8 @@ experiment:
         - type: approx
           approx_type: memo
           approx_rates: [10, 100, 500, 1000, 5000]
-          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
+          approx_entries: [100, 250, 500, 1000]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE ENTRIES=$APPROX_ENTRIES -C $PATH memo"
           pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
           metric:
             type: SSIM
@@ -530,7 +535,8 @@ experiment:
         - type: approx
           approx_type: memo
           approx_rates: [10, 100, 500, 1000, 5000]
-          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
+          approx_entries: [100, 250, 500, 1000]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE ENTRIES=$APPROX_ENTRIES -C $PATH memo"
           pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
           metric:
             type: MAPE
@@ -621,7 +627,8 @@ experiment:
         - type: approx
           approx_type: memo
           approx_rates: [10, 20, 30, 40, 50]
-          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
+          approx_entries: [100, 250, 500, 1000]
+          compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE ENTRIES=$APPROX_ENTRIES -C $PATH memo"
           pos_processing: |
             cut -d' ' -f2- output.txt | awk -F, '{ for (i=1; i<=NF; i++) a[i,NR]=$i; if (NF>max_f) max_f=NF } END { for (i=1; i<=max_f; i++) { for (j=1; j<=NR; j++) printf "%s%s", a[i,j], (j==NR ? "" : ","); print "" } }' > output.csv && duckdb -c "COPY (SELECT * FROM read_csv_auto('output.csv')) TO '$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet' (FORMAT PARQUET);" && rm -f output.txt output.csv
           metric:

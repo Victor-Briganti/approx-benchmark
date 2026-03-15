@@ -94,7 +94,7 @@ double correlation(double *x, double *y, int rows) {
 
 #ifdef MEMO
   double result = 0;
-#pragma omp approx memo(DROP) output(result)
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(result)
   {
 #elif defined(FASTMATH)
   double result = 0;

@@ -97,7 +97,7 @@ inline bool mandelbrot(const Complex &c) {
   bool result = true;
   double real = z.real;
   double imag = z.imag;
-#pragma omp approx memo(DROP) output(result)
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(result)
   {
 #elif defined(FASTMATH)
   bool result = true;

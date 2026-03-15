@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS "ExecutionGroup" (
   "type" VARCHAR NOT NULL,
   "approx_type" VARCHAR,
   "approx_rate" INTEGER,
+  "approx_entries" INTEGER,
 
   "compile_command" VARCHAR,
   "num_threads" INTEGER NOT NULL,

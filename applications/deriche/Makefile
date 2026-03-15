@@ -3,6 +3,7 @@ CFLAGS:=-Wall -Wextra -O3 -march=native -fopenmp -I/home/nessuno/llvm-project/bu
 OMPFLAGS:=-fopenmp -Wl,-rpath,/home/nessuno/llvm-project/build/runtimes/runtimes-bins/openmp/runtime/src -lomp
 NUM_THREADS?=$(shell nproc)
 DROP?=5
+ENTRIES?=100
 
 all: common
 
@@ -25,7 +26,7 @@ fastmath:
 	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DFASTMATH -DNUM_THREADS=$(NUM_THREADS) deriche.cpp -o deriche
 
 memo:
-	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DMEMO -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) deriche.cpp -o deriche
+	$(CXX) $(CFLAGS) $(OMPFLAGS) -DOMP -DMEMO -DDROP=$(DROP) -DNUM_THREADS=$(NUM_THREADS) -DENTRIES=$(ENTRIES) deriche.cpp -o deriche
 
 clean:
 	@rm -f deriche *.csv
