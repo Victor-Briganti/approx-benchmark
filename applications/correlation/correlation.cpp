@@ -232,5 +232,12 @@ int main(int argc, char **argv) {
 
   double *matrix = correlationMatrix(data, columns, rows);
   save_matrix_to_file(matrix, columns, outfile);
+
+  for (int i = 0; i < columns; i++) {
+    delete[] data[i];
+  }
+  delete[] data;
+  delete[] matrix;
+
   return 0;
 }

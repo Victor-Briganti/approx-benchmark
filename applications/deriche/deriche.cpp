@@ -315,6 +315,7 @@ int main(int argc, char **argv) {
   unsigned char *output = convert(filteredImage, width, height);
   stbi_write_jpg(argv[3], width, height, 1, output, 100);
   delete[] output;
+  delete[] filteredImage;
 
   return 0;
 }

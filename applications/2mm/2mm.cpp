@@ -82,7 +82,7 @@ void output_matrix(double *&matrix, size_t size, std::ostream &os) {
 }
 
 void init_matrix(double *&matrix, size_t size, bool fill = false) {
-  matrix = new double[size * size];
+  matrix = new double[size * size]();
 
   if (fill) {
 #pragma omp parallel for collapse(2)
@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
             }
             C[i * matrixSize + j] += res;
 #else
-            C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
+          C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
 #endif
           }
         }
@@ -187,7 +187,7 @@ int main(int argc, char **argv) {
             }
             E[i * matrixSize + j] += res;
 #else
-            E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
+          E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
 #endif
           }
         }
@@ -199,5 +199,12 @@ int main(int argc, char **argv) {
 #endif
 
   output_matrix(E, matrixSize, ofs);
+
+  delete[] A;
+  delete[] B;
+  delete[] C;
+  delete[] D;
+  delete[] E;
+
   return 0;
 }

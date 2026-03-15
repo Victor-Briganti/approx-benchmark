@@ -172,15 +172,11 @@ void jacobi_2d(int steps, size_t size, double *A, double *B) {
           }
           A[i * size + j] = res;
 #else
-          B[i * size + j] =
-              (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
-               A[(i - 1) * size + j] + A[(i + 1) * size + j]) /
-              4;
-#endif
           A[i * size + j] =
               (B[i * size + j] + B[i * size + j + 1] + B[i * size + j - 1] +
                B[(i - 1) * size + j] + B[(i + 1) * size + j]) /
               4;
+#endif
         }
       }
     }
@@ -212,5 +208,9 @@ int main(int argc, char **argv) {
 
   jacobi_2d(steps, size, A, B);
   output_matrix(A, size, outfile);
+
+  delete[] A;
+  delete[] B;
+
   return 0;
 }

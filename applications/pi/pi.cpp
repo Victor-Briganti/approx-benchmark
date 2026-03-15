@@ -52,7 +52,7 @@
 #ifdef MEMO
 // This is a random number generator based on the xorshiftr128+ algorithm.
 // Reference: https://en.wikipedia.org/wiki/Xorshift#xorshiftr+
-inline uint64_t xorshiftr128plus(uint64_t state0, uint64_t state1) {
+inline uint64_t xorshiftr128plus(uint64_t &state0, uint64_t &state1) {
   uint64_t x = state0;
   const uint64_t y = state1;
   state0 = y;
@@ -63,7 +63,7 @@ inline uint64_t xorshiftr128plus(uint64_t state0, uint64_t state1) {
   return x;
 }
 
-inline double randomDouble(uint64_t state0, uint64_t state1) {
+inline double randomDouble(uint64_t &state0, uint64_t &state1) {
   return static_cast<double>(xorshiftr128plus(state0, state1)) / UINT64_MAX;
 }
 

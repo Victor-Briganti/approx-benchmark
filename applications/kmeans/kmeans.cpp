@@ -115,19 +115,23 @@ float *kmeans_clustering(float *features, int numFeatures, int numPoints,
     {
 #ifdef PERFO_LARGE
 #pragma omp for approx perfo(large, DROP) reduction(+ : delta)                 \
-    reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
+    reduction(+ : newCentroids[ : numClusters * numFeatures])                  \
+    reduction(+ : newCentroidsLen[ : numClusters]) schedule(static)
 #endif
 #ifdef PERFO_INIT
 #pragma omp for approx perfo(init, DROP) reduction(+ : delta)                  \
-    reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
+    reduction(+ : newCentroids[ : numClusters * numFeatures])                  \
+    reduction(+ : newCentroidsLen[ : numClusters]) schedule(static)
 #endif
 #ifdef PERFO_FINI
 #pragma omp for approx perfo(fini, DROP) reduction(+ : delta)                  \
-    reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
+    reduction(+ : newCentroids[ : numClusters * numFeatures])                  \
+    reduction(+ : newCentroidsLen[ : numClusters]) schedule(static)
 #endif
 #ifdef OMP
 #pragma omp for reduction(+ : delta)                                           \
-    reduction(+ : newCentroids[ : numClusters * numFeatures]) schedule(static)
+    reduction(+ : newCentroids[ : numClusters * numFeatures])                  \
+    reduction(+ : newCentroidsLen[ : numClusters]) schedule(static)
 #endif
       for (int j = 0; j < numPoints; j++) {
 #ifdef MEMO
@@ -283,6 +287,9 @@ int main(int argc, char **argv) {
               << (j + 1 == numFeatures ? "\n" : ",");
     }
   }
+
+  delete[] features;
+  delete[] centroids;
 
   return 0;
 }
