@@ -7,6 +7,7 @@ import yaml
 import json
 import subprocess
 import cv2
+import io
 from skimage.metrics import structural_similarity as similarity
 from typing import Dict, List, Tuple, Optional, Any
 
@@ -257,7 +258,7 @@ def make(cmd: str):
 
 def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
     # Build command
-    cmd = '/usr/bin/time -f \'{"elapsed": %e, "user": %U, "sys": %S}\' perf stat -j '
+    cmd = '/usr/bin/time -f \'elapsed,user,sys\n%e,%U,%S\' perf stat -x , '
     cmd += f"{exec_info['bench_path']}/{exec_info['bench_name']} "
     for _, val in exec_info["inputs"].items():
         cmd += f"{str(val).replace('$PATH', exec_info['bench_path'])} "
@@ -276,22 +277,45 @@ def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
         )
 
         # Parse output
-        for line in res.stderr.strip().splitlines():
-            try:
-                data = json.loads(line)
-                if "elapsed" in data:
-                    for k in ["elapsed", "user", "sys"]:
-                        save_performance(conn, group_id, exec_id, k, data[k])
-                elif data.get("event"):
-                    save_performance(
-                        conn,
-                        group_id,
-                        exec_id,
-                        data["event"],
-                        data["counter-value"],
-                    )
-            except json.JSONDecodeError:
+        lines = res.stderr.strip().splitlines()
+        perf_lines = []
+        time_lines = []
+        
+        time_header_found = False
+        for line in lines:
+            line_str = line.strip()
+            if not line_str:
                 continue
+            if line_str == "elapsed,user,sys":
+                time_header_found = True
+                time_lines.append(line_str)
+            elif time_header_found and len(time_lines) == 1:
+                # The line immediately following the header is the time data
+                time_lines.append(line_str)
+            else:
+                perf_lines.append(line_str)
+        
+        if time_lines:
+            time_df = pd.read_csv(io.StringIO("\n".join(time_lines)))
+            if not time_df.empty:
+                for col in time_df.columns:
+                    try:
+                        val = float(time_df[col].iloc[0])
+                        save_performance(conn, group_id, exec_id, col, val)
+                    except (ValueError, TypeError, IndexError):
+                        continue
+
+        if perf_lines:
+            perf_df = pd.read_csv(io.StringIO("\n".join(perf_lines)), header=None, on_bad_lines='skip')
+            for _, row in perf_df.iterrows():
+                if pd.isna(row[0]) or pd.isna(row[2]):
+                    continue
+                try:
+                    val = float(row[0])
+                    event = str(row[2])
+                    save_performance(conn, group_id, exec_id, event, val)
+                except ValueError:
+                    continue
     except subprocess.CalledProcessError as e:
         save_exec_error(conn, group_id, exec_id, e.returncode, e.stderr)
 
