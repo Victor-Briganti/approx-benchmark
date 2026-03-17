@@ -365,7 +365,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 20, 30, 40, 50]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
@@ -620,7 +620,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 20, 30, 40, 50]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: |
             cut -d' ' -f2- output.txt | awk -F, '{ for (i=1; i<=NF; i++) a[i,NR]=$i; if (NF>max_f) max_f=NF } END { for (i=1; i<=max_f; i++) { for (j=1; j<=NR; j++) printf "%s%s", a[i,j], (j==NR ? "" : ","); print "" } }' > output.csv && duckdb -c "COPY (SELECT * FROM read_csv_auto('output.csv')) TO '$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet' (FORMAT PARQUET);" && rm -f output.txt output.csv
