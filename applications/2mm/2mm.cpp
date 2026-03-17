@@ -62,12 +62,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
-
-#define L1_SIZE 32 /* Defined in KB */
 
 //===------------------------------------------------------------------------===
 // Helper Functions
@@ -92,6 +89,49 @@ void init_matrix(double *&matrix, size_t size, bool fill = false) {
       }
     }
   }
+}
+
+void matmul(double *A, double *B, double *C, size_t size) {
+#ifdef FASTMATH
+#pragma omp approx fastmath
+  {
+#endif
+#pragma omp parallel shared(A, B, C) num_threads(NUM_THREADS)
+    {
+#ifdef PERFO_LARGE
+#pragma omp for approx perfo(large, DROP) schedule(static)
+#endif
+#ifdef PERFO_INIT
+#pragma omp for approx perfo(init, DROP) schedule(static)
+#endif
+#ifdef PERFO_FINI
+#pragma omp for approx perfo(fini, DROP) schedule(static)
+#endif
+#ifdef OMP
+#pragma omp for schedule(static)
+#endif
+      for (size_t i = 0; i < size; i++) {
+        for (size_t k = 0; k < size; k++) {
+          double a_val = A[i * size + k];
+          for (size_t j = 0; j < size; j++) {
+#ifdef MEMO
+            double res = 0;
+            double b_val = B[k * size + j];
+#pragma omp approx memo(DROP) num_entries(ENTRIES) output(res)
+            {
+              res = a_val * b_val;
+            }
+            C[i * size + j] += res;
+#else
+          C[i * size + j] += a_val * B[k * size + j];
+#endif
+          }
+        }
+      }
+    }
+#ifdef FASTMATH
+  }
+#endif
 }
 
 //===------------------------------------------------------------------------===
@@ -124,79 +164,8 @@ int main(int argc, char **argv) {
   init_matrix(D, matrixSize, true);
   init_matrix(E, matrixSize);
 
-#ifdef FASTMATH
-#pragma omp approx fastmath
-  {
-#endif
-
-#pragma omp parallel shared(A, B, C, D) num_threads(NUM_THREADS)
-    {
-#ifdef PERFO_LARGE
-#pragma omp for approx perfo(large, DROP) schedule(static)
-#endif
-#ifdef PERFO_INIT
-#pragma omp for approx perfo(init, DROP) schedule(static)
-#endif
-#ifdef PERFO_FINI
-#pragma omp for approx perfo(fini, DROP) schedule(static)
-#endif
-#ifdef OMP
-#pragma omp for schedule(static)
-#endif
-      for (size_t i = 0; i < matrixSize; i++) {
-        for (size_t k = 0; k < matrixSize; k++) {
-          double a_val = A[i * matrixSize + k];
-          for (size_t j = 0; j < matrixSize; j++) {
-#ifdef MEMO
-            double res = 0;
-            double b_val = B[k * matrixSize + j];
-#pragma omp approx memo(DROP) output(res)
-            {
-              res = a_val * b_val;
-            }
-            C[i * matrixSize + j] += res;
-#else
-          C[i * matrixSize + j] += a_val * B[k * matrixSize + j];
-#endif
-          }
-        }
-      }
-
-#ifdef PERFO_LARGE
-#pragma omp for approx perfo(large, DROP) schedule(static)
-#endif
-#ifdef PERFO_INIT
-#pragma omp for approx perfo(init, DROP) schedule(static)
-#endif
-#ifdef PERFO_FINI
-#pragma omp for approx perfo(fini, DROP) schedule(static)
-#endif
-#ifdef OMP
-#pragma omp for schedule(static)
-#endif
-      for (size_t i = 0; i < matrixSize; i++) {
-        for (size_t k = 0; k < matrixSize; k++) {
-          double c_val = C[i * matrixSize + k];
-          for (size_t j = 0; j < matrixSize; j++) {
-#ifdef MEMO
-            double res = 0;
-            double d_val = D[k * matrixSize + j];
-#pragma omp approx memo(DROP) output(res)
-            {
-              res = c_val * d_val;
-            }
-            E[i * matrixSize + j] += res;
-#else
-          E[i * matrixSize + j] += c_val * D[k * matrixSize + j];
-#endif
-          }
-        }
-      }
-    }
-
-#ifdef FASTMATH
-  }
-#endif
+  matmul(A, B, C, matrixSize);
+  matmul(C, D, E, matrixSize);
 
   output_matrix(E, matrixSize, ofs);
 
