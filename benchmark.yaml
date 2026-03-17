@@ -116,7 +116,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 100, 500, 1000, 5000]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
@@ -198,7 +198,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 100, 500, 1000, 5000]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
@@ -281,7 +281,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 100, 500, 1000, 5000]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
           metric:
@@ -447,7 +447,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 100, 500, 1000, 5000]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
           metric:
@@ -529,7 +529,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 100, 500, 1000, 5000]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
           metric:
