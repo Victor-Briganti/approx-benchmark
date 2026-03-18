@@ -117,7 +117,7 @@ void matmul(double *A, double *B, double *C, size_t size) {
 #ifdef MEMO
             double res = 0;
             double b_val = B[k * size + j];
-#pragma omp approx memo(DROP) num_entries(ENTRIES) output(res)
+#pragma omp approx memo(DROP) output(res)
             {
               res = a_val * b_val;
             }

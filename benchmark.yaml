@@ -462,7 +462,7 @@ experiment:
       num_executions: 10
       num_threads: [1, 2, 4, 8]
       inputs:
-        num_iterations: 100000000
+        num_iterations: 1000000000
         file_output: output.csv
       variants:
         - type: common
