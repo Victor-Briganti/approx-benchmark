@@ -102,9 +102,6 @@ inline void jacobi_kernel(size_t size, double *A, double *B) {
 #ifdef FASTMATH
 #pragma omp approx fastmath
 #endif
-#ifdef MEMO
-#pragma omp approx memo(DROP) output(B[ : size * size])
-#endif
   {
 #ifdef PERFO_LARGE
 #pragma omp for approx perfo(large, DROP) collapse(2)
@@ -120,10 +117,21 @@ inline void jacobi_kernel(size_t size, double *A, double *B) {
 #endif
     for (size_t i = 1; i < size - 1; i++) {
       for (size_t j = 1; j < size - 1; j++) {
+#ifdef MEMO
+        double res;
+#pragma omp approx memo output(res)
+        {
+          res = (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
+                 A[(i - 1) * size + j] + A[(i + 1) * size + j]) *
+                0.2;
+        }
+        B[i * size + j] = res
+#else
         B[i * size + j] =
             (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
              A[(i - 1) * size + j] + A[(i + 1) * size + j]) *
             0.2;
+#endif
       }
     }
   }
