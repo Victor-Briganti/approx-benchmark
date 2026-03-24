@@ -1,12 +1,12 @@
 experiment:
   server:
-    hostname: Armagedon
-    cpu_description: i7-4790 Intel Core
-    hertz: 3.60
+    hostname: ubuntu
+    cpu_description: AMD Ryzen 5 3500U
+    hertz: 2.1
     cores: 4
-    threads: 8
-    ram_memory: 32
-    operating_system: Ubuntu 22.04.4 LTS
+    threads: 6
+    ram_memory: 10
+    operating_system: Ubuntu 24.04
   benchmarks:
     - name: "2mm"
       version: 0
