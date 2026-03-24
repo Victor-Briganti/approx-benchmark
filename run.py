@@ -8,6 +8,7 @@ import yaml
 import json
 import subprocess
 import cv2
+import io
 from skimage.metrics import structural_similarity as similarity
 from typing import Dict, List, Tuple, Optional, Any
 
@@ -280,7 +281,6 @@ def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
         lines = res.stderr.strip().splitlines()
         perf_lines = []
         time_lines = []
-
         time_header_found = False
         for line in lines:
             line_str = line.strip()

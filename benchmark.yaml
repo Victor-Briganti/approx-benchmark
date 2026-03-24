@@ -1,12 +1,12 @@
 experiment:
   server:
-    hostname: ubuntu
-    cpu_description: AMD Ryzen 5 3500U
-    hertz: 2.1
+    hostname: Armagedon
+    cpu_description: i7-4790 Intel Core
+    hertz: 3.60
     cores: 4
-    threads: 6
-    ram_memory: 10
-    operating_system: Ubuntu 24.04
+    threads: 8
+    ram_memory: 32
+    operating_system: Ubuntu 22.04.4 LTS
   benchmarks:
     - name: "2mm"
       version: 0
@@ -116,7 +116,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 100, 500, 1000, 5000]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
@@ -198,7 +198,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 100, 500, 1000, 5000]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
@@ -281,7 +281,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 100, 500, 1000, 5000]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: "mv output.jpg $PATH/output/output_$ID_GROUPg_$ID_RUN.jpg"
           metric:
@@ -365,7 +365,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 20, 30, 40, 50]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: 'duckdb -c "COPY (SELECT * FROM read_csv_auto(''output.csv'')) TO ''$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet'' (FORMAT PARQUET);" && rm -f output.csv'
           metric:
@@ -447,7 +447,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 100, 500, 1000, 5000]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: "mv output.bmp $PATH/output/output_$ID_GROUPg_$ID_RUN.bmp"
           metric:
@@ -462,7 +462,7 @@ experiment:
       num_executions: 10
       num_threads: [1, 2, 4, 8]
       inputs:
-        num_iterations: 100000000
+        num_iterations: 1000000000
         file_output: output.csv
       variants:
         - type: common
@@ -529,7 +529,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 100, 500, 1000, 5000]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: "mv output.csv $PATH/output/output_$ID_GROUPg_$ID_RUN.csv"
           metric:
@@ -620,7 +620,7 @@ experiment:
             OMP_APPROX: "TRUE"
         - type: approx
           approx_type: memo
-          approx_rates: [10, 20, 30, 40, 50]
+          approx_rates: [10, 25, 50, 100]
           compile: "make NUM_THREADS=$NUM_THREADS DROP=$APPROX_RATE -C $PATH memo"
           pos_processing: |
             cut -d' ' -f2- output.txt | awk -F, '{ for (i=1; i<=NF; i++) a[i,NR]=$i; if (NF>max_f) max_f=NF } END { for (i=1; i<=max_f; i++) { for (j=1; j<=NR; j++) printf "%s%s", a[i,j], (j==NR ? "" : ","); print "" } }' > output.csv && duckdb -c "COPY (SELECT * FROM read_csv_auto('output.csv')) TO '$PATH/output/output_$ID_GROUPg_$ID_RUN.parquet' (FORMAT PARQUET);" && rm -f output.txt output.csv
