@@ -119,13 +119,13 @@ inline void jacobi_kernel(size_t size, double *A, double *B) {
       for (size_t j = 1; j < size - 1; j++) {
 #ifdef MEMO
         double res;
-#pragma omp approx memo output(res)
+#pragma omp approx memo(DROP) output(res)
         {
           res = (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
                  A[(i - 1) * size + j] + A[(i + 1) * size + j]) *
                 0.2;
         }
-        B[i * size + j] = res
+        B[i * size + j] = res;
 #else
         B[i * size + j] =
             (A[i * size + j] + A[i * size + j + 1] + A[i * size + j - 1] +
