@@ -297,7 +297,7 @@ experiment:
       num_threads: [1, 2, 4, 8]
       inputs:
         matrix_size: 2048
-        num_steps: 10
+        num_steps: 100
         output: output.csv
       variants:
         - type: common
