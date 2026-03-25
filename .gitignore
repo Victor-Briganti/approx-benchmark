@@ -2,6 +2,7 @@
 .env/
 output/
 performance/
+!report/**/*.pdf
 *.a
 *.db
 *.db.wal
