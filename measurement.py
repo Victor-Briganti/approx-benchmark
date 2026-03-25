@@ -183,9 +183,7 @@ def get_performance_value(
 # ============================================================
 
 
-def plot_quality_metrics(
-    app_name, app_version, approx_type, approx_rate, metrics
-):
+def plot_quality_metrics(app_name, app_version, approx_type, approx_rate, metrics):
     if not metrics:
         print(
             f"[WARN] No metrics to plot. App: {app_name}, Type: {approx_type}, Rate: {approx_rate}"
@@ -212,9 +210,13 @@ def plot_quality_metrics(
     plt.title(title)
     plt.xlabel("Número de Threads")
     plt.ylabel(f"{df['name'].iloc[0].upper()} %")
-    
-    # Disable cientific notation before plotting the graph
-    plt.ticklabel_format(useOffset=False, style='plain', axis='y')
+
+    max_val = df["value"].abs().max()
+
+    if max_val > 0 and max_val < 0.001:
+        plt.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
+    else:
+        plt.ticklabel_format(useOffset=False, style="plain", axis="y")
 
     plt.xticks(all_threads)
     plt.grid(True, alpha=0.3)
@@ -349,9 +351,7 @@ def run(conn):
                         app.bench_version,
                         num_thread.num_threads,
                     )
-                    perf_omp = get_performance_value(
-                        conn, group_id, PERFORMANCE_METRIC
-                    )
+                    perf_omp = get_performance_value(conn, group_id, PERFORMANCE_METRIC)
                     perf_omp["threads"] = num_thread.num_threads
                     performance_omp.append(perf_omp)
 
