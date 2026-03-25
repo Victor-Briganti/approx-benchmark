@@ -191,6 +191,7 @@ def load_file_type(path: str) -> np.ndarray:
 def mape(reference: str, prediction: str):
     ref_vals = load_file_type(reference).astype(np.float64)
     pred_vals = load_file_type(prediction).astype(np.float64)
+
     if ref_vals.shape != pred_vals.shape:
         print(f"[ERROR] Shape mismatch: {ref_vals.shape} != {pred_vals.shape}")
         sys.exit(-1)
@@ -199,11 +200,12 @@ def mape(reference: str, prediction: str):
     denominator = np.abs(ref_vals)
 
     with np.errstate(divide="ignore", invalid="ignore"):
-        res = np.mean(numerator / denominator) * 100.0
+        per_element = (numerator / denominator) * 100.0
 
-    if np.isnan(res):
-        return 100.0
-    return min(res, 100.0)
+    invalid_mask = np.isnan(per_element) | np.isinf(per_element) | (per_element > 100.0)
+
+    per_element[invalid_mask] = 100.0
+    return np.mean(per_element)
 
 
 def mcr(reference: str, prediction: str):
