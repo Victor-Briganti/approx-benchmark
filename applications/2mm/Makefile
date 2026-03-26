@@ -1,5 +1,5 @@
 CXX=/home/aJoaoBriganti/approx-llvm/build/bin/clang++
-CFLAGS:=-Wall -Wextra -O3 -march=native -fopenmp -I/home/aJoaoBriganti/approx-llvm/build/lib/clang/21/include -L/home/aJoaoBriganti/approx-llvm/build/runtimes/runtimes-bins/openmp/runtime/src
+CFLAGS:=-Wall -Wextra -g -O3 -march=native -fopenmp -I/home/aJoaoBriganti/approx-llvm/build/lib/clang/21/include -L/home/aJoaoBriganti/approx-llvm/build/runtimes/runtimes-bins/openmp/runtime/src
 OMPFLAGS:=-fopenmp -Wl,-rpath,/home/aJoaoBriganti/approx-llvm/build/runtimes/runtimes-bins/openmp/runtime/src -lomp
 NUM_THREADS?=$(shell nproc)
 DROP?=5
