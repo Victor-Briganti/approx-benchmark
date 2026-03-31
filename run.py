@@ -8,7 +8,6 @@ import yaml
 import json
 import subprocess
 import cv2
-import io
 from skimage.metrics import structural_similarity as similarity
 from typing import Dict, List, Tuple, Optional, Any
 
@@ -227,7 +226,7 @@ def ssim(reference: str, prediction: str):
     pred = cv2.imread(prediction)
     ref_gray = cv2.cvtColor(ref, cv2.COLOR_BGR2GRAY)
     pred_gray = cv2.cvtColor(pred, cv2.COLOR_BGR2GRAY)
-    return similarity(ref_gray, pred_gray)
+    return similarity(ref_gray, pred_gray) * 100
 
 
 def metric(
