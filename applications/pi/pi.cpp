@@ -113,19 +113,16 @@ double piMonteCarlo(uint64_t numIterations) {
     {
 #endif
 #ifdef PERFO_LARGE
-#pragma omp for approx perfo(large, DROP) schedule(static) reduction(+ : n)    \
-    reduction(+ : hit)
+#pragma omp for approx perfo(large, DROP) schedule(static) reduction(+ : n)
 #endif
 #ifdef PERFO_INIT
-#pragma omp for approx perfo(init, DROP) schedule(static) reduction(+ : n)     \
-    reduction(+ : hit)
+#pragma omp for approx perfo(init, DROP) schedule(static) reduction(+ : n)
 #endif
 #ifdef PERFO_FINI
-#pragma omp for approx perfo(fini, DROP) schedule(static) reduction(+ : n)     \
-    reduction(+ : hit)
+#pragma omp for approx perfo(fini, DROP) schedule(static) reduction(+ : n)
 #endif
 #ifdef OMP
-#pragma omp for schedule(static) reduction(+ : n) reduction(+ : hit)
+#pragma omp for schedule(static) reduction(+ : n)
 #endif
       for (uint64_t i = 0; i < numIterations; i++) {
 #ifdef MEMO
