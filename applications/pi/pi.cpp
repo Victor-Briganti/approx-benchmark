@@ -91,7 +91,7 @@ inline double randomDouble(RandState &state) {
 #endif
 
 double piMonteCarlo(uint64_t numIterations) {
-  uint64_t hit = 0;
+  uint64_t hit = 0, n = 0;
 
 #pragma omp parallel reduction(+ : hit) num_threads(NUM_THREADS)
   {
@@ -113,16 +113,16 @@ double piMonteCarlo(uint64_t numIterations) {
     {
 #endif
 #ifdef PERFO_LARGE
-#pragma omp for approx perfo(large, DROP) schedule(static)
+#pragma omp for approx perfo(large, DROP) schedule(static) reduction(+ : n)
 #endif
 #ifdef PERFO_INIT
-#pragma omp for approx perfo(init, DROP) schedule(static)
+#pragma omp for approx perfo(init, DROP) schedule(static) reduction(+ : n)
 #endif
 #ifdef PERFO_FINI
-#pragma omp for approx perfo(fini, DROP) schedule(static)
+#pragma omp for approx perfo(fini, DROP) schedule(static) reduction(+ : n)
 #endif
 #ifdef OMP
-#pragma omp for schedule(static)
+#pragma omp for schedule(static) reduction(+ : n)
 #endif
       for (uint64_t i = 0; i < numIterations; i++) {
 #ifdef MEMO
@@ -141,13 +141,14 @@ double piMonteCarlo(uint64_t numIterations) {
 #ifdef MEMO
         }
 #endif
+        n++;
       }
 #ifdef FASTMATH
     }
 #endif
   }
 
-  return 4.0 * hit / numIterations;
+  return 4.0 * hit / n;
 }
 
 int main(int argc, char **argv) {
