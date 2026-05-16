@@ -191,7 +191,7 @@ def plot_quality_metrics(app_name, app_version, approx_type, approx_rate, metric
         return
 
     df = pd.concat(metrics, ignore_index=True)
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(12, 9))
     all_threads = sorted(df["threads"].unique())
 
     for metric_name, g in df.groupby("name"):
@@ -200,6 +200,8 @@ def plot_quality_metrics(app_name, app_version, approx_type, approx_rate, metric
             g_sorted["threads"],
             g_sorted["value"],
             marker="o",
+            linewidth=10,
+            markersize=25,
             label=metric_name.upper(),
         )
 
@@ -207,9 +209,9 @@ def plot_quality_metrics(app_name, app_version, approx_type, approx_rate, metric
     if approx_rate is not None:
         title += f"{approx_rate}"
 
-    plt.title(title)
-    plt.xlabel("Número de Threads")
-    plt.ylabel(f"{df['name'].iloc[0].upper()} %")
+    plt.title(title, fontsize=30)
+    plt.xlabel("Número de Threads", fontsize=30)
+    plt.ylabel(f"{df['name'].iloc[0].upper()} %", fontsize=30)
 
     max_val = df["value"].abs().max()
 
@@ -218,9 +220,10 @@ def plot_quality_metrics(app_name, app_version, approx_type, approx_rate, metric
     else:
         plt.ticklabel_format(useOffset=False, style="plain", axis="y")
 
-    plt.xticks(all_threads)
+    plt.xticks(all_threads, fontsize=30)
+    plt.yticks(fontsize=30)
     plt.grid(True, alpha=0.3)
-    plt.legend()
+    plt.legend(fontsize=30)
     plt.tight_layout()
     plt.savefig(
         f"report/{app_name}/metric/{app_name}v{app_version}_{approx_type}_{approx_rate}.pdf"
@@ -261,18 +264,22 @@ def plot_performance(
 
     all_threads = sorted(set(df_approx["threads"]) | set(df_omp["threads"]))
 
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(12, 9))
     plt.plot(
         df_omp["threads"],
         df_omp["speedup"],
         marker="o",
         linestyle="--",
+        linewidth=10,
+        markersize=25,
         label="omp",
     )
     plt.plot(
         df_approx["threads"],
         df_approx["speedup"],
         marker="o",
+        linewidth=10,
+        markersize=25,
         label=approx_type,
     )
 
@@ -280,12 +287,13 @@ def plot_performance(
     if approx_rate is not None:
         title += f" {approx_rate}"
 
-    plt.title(title)
-    plt.xlabel("Número de Threads")
-    plt.ylabel("Speedup")
-    plt.xticks(all_threads)
+    plt.title(title, fontsize=30)
+    plt.xlabel("Número de Threads", fontsize=30)
+    plt.ylabel("Speedup", fontsize=30)
+    plt.xticks(all_threads, fontsize=30)
+    plt.yticks(fontsize=30)
     plt.grid(True, alpha=0.3)
-    plt.legend()
+    plt.legend(fontsize=30)
     plt.tight_layout()
 
     plt.savefig(
