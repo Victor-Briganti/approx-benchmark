@@ -209,7 +209,7 @@ def plot_quality_metrics(app_name, app_version, approx_type, approx_rate, metric
     if approx_rate is not None:
         title += f"{approx_rate}"
 
-    plt.title(title, fontsize=30)
+    plt.title(title, fontsize=45, fontweight="bold")
     plt.xlabel("Número de Threads", fontsize=30)
     plt.ylabel(f"{df['name'].iloc[0].upper()} %", fontsize=30)
 
@@ -287,7 +287,7 @@ def plot_performance(
     if approx_rate is not None:
         title += f" {approx_rate}"
 
-    plt.title(title, fontsize=30)
+    plt.title(title, fontsize=45, fontweight="bold")
     plt.xlabel("Número de Threads", fontsize=30)
     plt.ylabel("Speedup", fontsize=30)
     plt.xticks(all_threads, fontsize=30)
