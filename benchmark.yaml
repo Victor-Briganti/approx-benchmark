@@ -47,6 +47,7 @@ experiment:
     - bench_name: 2mm
       bench_version: 0
       num_executions: 10
+      num_warmups: 3
       num_threads: [1, 2, 4, 8]
       inputs:
         matrix_size: 2048
@@ -129,6 +130,7 @@ experiment:
     - bench_name: correlation
       bench_version: 0
       num_executions: 10
+      num_warmups: 3
       num_threads: [1, 2, 4, 8]
       inputs:
         input: $PATH/input/input.csv
@@ -211,6 +213,7 @@ experiment:
     - bench_name: deriche
       bench_version: 0
       num_executions: 10
+      num_warmups: 3
       num_threads: [1, 2, 4, 8]
       inputs:
         alpha: 0.5
@@ -294,6 +297,7 @@ experiment:
     - bench_name: jacobi2d
       bench_version: 0
       num_executions: 10
+      num_warmups: 3
       num_threads: [1, 2, 4, 8]
       inputs:
         matrix_size: 2048
@@ -378,6 +382,7 @@ experiment:
     - bench_name: mandelbrot
       bench_version: 0
       num_executions: 10
+      num_warmups: 3
       num_threads: [1, 2, 4, 8]
       inputs:
         image_size: 2048
@@ -460,6 +465,7 @@ experiment:
     - bench_name: pi
       bench_version: 0
       num_executions: 10
+      num_warmups: 3
       num_threads: [1, 2, 4, 8]
       inputs:
         num_iterations: 1000000000
@@ -542,6 +548,7 @@ experiment:
     - bench_name: kmeans
       bench_version: 0
       num_executions: 10
+      num_warmups: 3
       num_threads: [1, 2, 4, 8]
       inputs:
         num_clusters: 10

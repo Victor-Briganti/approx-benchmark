@@ -3,6 +3,7 @@
 .venv/
 output/
 performance/
+*.pyc
 *.a
 *.db
 *.db.wal

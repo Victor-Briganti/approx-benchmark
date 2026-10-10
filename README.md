@@ -88,7 +88,7 @@ Adjust this file according to your experimental environment before running the b
 
 ## Output
 
-All execution results are stored in the DuckDB database specified on the command line. This database contains performance measurements, quality metrics, execution metadata, and system information, enabling further analysis and visualization.
+All execution results are stored in the DuckDB database specified on the command line. This database contains performance measurements, energy consumption, quality metrics, execution metadata, and system information, enabling further analysis and visualization.
 
 ## LICENSE
 

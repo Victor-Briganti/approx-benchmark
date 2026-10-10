@@ -113,6 +113,18 @@ CREATE TABLE IF NOT EXISTS "Performance" (
   REFERENCES "Execution" ("id", "group_id"),
 );
 
+CREATE TABLE IF NOT EXISTS "Energy" (
+  "name" VARCHAR,
+  "exec_id" BIGINT,
+  "group_id" BIGINT,
+
+  "value" DOUBLE NOT NULL,
+
+  PRIMARY KEY ("name", "group_id", "exec_id"),
+  FOREIGN KEY ("exec_id", "group_id")
+  REFERENCES "Execution" ("id", "group_id"),
+);
+
 CREATE TABLE IF NOT EXISTS "QualityMetrics" (
   "name" VARCHAR,
   "group_id" BIGINT,
