@@ -406,6 +406,13 @@ def pos_process(cmd: str):
 # ============================================================
 
 
+def remove_output(path: str):
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+
+
 def execution(conn, executions: list[dict[str, Any]], server: str):
     for entry in executions:
         res = select_benchmark(conn, entry["bench_name"], entry["bench_version"])
@@ -416,6 +423,9 @@ def execution(conn, executions: list[dict[str, Any]], server: str):
         if sum(1 for v in entry["variants"] if "baseline" in v) > 1:
             print("[ERROR] There should be only one baseline per variant")
             sys.exit(-1)
+
+        delete_output = entry.get("delete_output", False)
+        references = set()
 
         baseline_gid = -1
         baseline_id = -1
@@ -497,6 +507,15 @@ def execution(conn, executions: list[dict[str, Any]], server: str):
                                 .replace("$ID_BASE", str(baseline_id))
                             )
                             metric(conn, gid, id, mtype, pred, ref)
+
+                            if delete_output:
+                                # The baseline output is still needed by the
+                                # next variants, so it is removed at the end
+                                remove_output(pred)
+                                references.add(ref)
+
+        for ref in references:
+            remove_output(ref)
 
 
 def run_plan(conn, plan_path: str):
