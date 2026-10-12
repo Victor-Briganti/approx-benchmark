@@ -49,7 +49,7 @@ experiment:
       num_executions: 10
       num_warmups: 3
       delete_output: true
-      num_threads: [1, 2, 4, 8]
+      num_threads: [1, 2, 4, 8, 16, 24, 32]
       inputs:
         matrix_size: 2048
         output: output.csv
@@ -133,7 +133,7 @@ experiment:
       num_executions: 10
       num_warmups: 3
       delete_output: true
-      num_threads: [1, 2, 4, 8]
+      num_threads: [1, 2, 4, 8, 16, 32]
       inputs:
         input: $PATH/input/input.csv
         output: output.csv
@@ -217,7 +217,7 @@ experiment:
       num_executions: 10
       num_warmups: 3
       delete_output: true
-      num_threads: [1, 2, 4, 8]
+      num_threads: [1, 2, 4, 8, 16, 32]
       inputs:
         alpha: 0.5
         input: $PATH/input/sunflower.jpg
@@ -302,7 +302,7 @@ experiment:
       num_executions: 10
       num_warmups: 3
       delete_output: true
-      num_threads: [1, 2, 4, 8]
+      num_threads: [1, 2, 4, 8, 16, 32]
       inputs:
         matrix_size: 2048
         num_steps: 100
@@ -388,7 +388,7 @@ experiment:
       num_executions: 10
       num_warmups: 3
       delete_output: true
-      num_threads: [1, 2, 4, 8]
+      num_threads: [1, 2, 4, 8, 16, 32]
       inputs:
         image_size: 2048
         output_img: output.bmp
@@ -472,7 +472,7 @@ experiment:
       num_executions: 10
       num_warmups: 3
       delete_output: true
-      num_threads: [1, 2, 4, 8]
+      num_threads: [1, 2, 4, 8, 16, 32]
       inputs:
         num_iterations: 1000000000
         file_output: output.csv
@@ -556,7 +556,7 @@ experiment:
       num_executions: 10
       num_warmups: 3
       delete_output: true
-      num_threads: [1, 2, 4, 8]
+      num_threads: [1, 2, 4, 8, 16, 32]
       inputs:
         num_clusters: 10
         iterations: 100
