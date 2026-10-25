@@ -1,12 +1,12 @@
 experiment:
   server:
-    hostname: sorgan
-    cpu_description: Intel(R) Xeon(R) Silver 4208 CPU @ 2.10GHz
-    hertz: 2.10
-    cores: 16
-    threads: 32
-    ram_memory: 187
-    operating_system: Rocky Linux 10.2 (Red Quartz)
+    hostname: Cenapad (parexp)
+    cpu_description: AMD EPYC 7443 24-Core Processor
+    hertz: 2.84
+    cores: 48
+    threads: 48 
+    ram_memory: 124
+    operating_system: AlmaLinux 8.10 (Cerulean Leopard)
   benchmarks:
     - name: "2mm"
       version: 0
@@ -47,9 +47,7 @@ experiment:
     - bench_name: 2mm
       bench_version: 0
       num_executions: 10
-      num_warmups: 3
-      delete_output: true
-      num_threads: [1, 2, 4, 8, 16, 24, 32]
+      num_threads: [1, 2, 4, 8, 16, 32, 48]
       inputs:
         matrix_size: 2048
         output: output.csv
@@ -131,9 +129,7 @@ experiment:
     - bench_name: correlation
       bench_version: 0
       num_executions: 10
-      num_warmups: 3
-      delete_output: true
-      num_threads: [1, 2, 4, 8, 16, 32]
+      num_threads: [1, 2, 4, 8, 16, 32, 48]
       inputs:
         input: $PATH/input/input.csv
         output: output.csv
@@ -215,9 +211,7 @@ experiment:
     - bench_name: deriche
       bench_version: 0
       num_executions: 10
-      num_warmups: 3
-      delete_output: true
-      num_threads: [1, 2, 4, 8, 16, 32]
+      num_threads: [1, 2, 4, 8, 16, 32, 48]
       inputs:
         alpha: 0.5
         input: $PATH/input/sunflower.jpg
@@ -300,9 +294,7 @@ experiment:
     - bench_name: jacobi2d
       bench_version: 0
       num_executions: 10
-      num_warmups: 3
-      delete_output: true
-      num_threads: [1, 2, 4, 8, 16, 32]
+      num_threads: [1, 2, 4, 8, 16, 32, 48]
       inputs:
         matrix_size: 2048
         num_steps: 100
@@ -386,9 +378,7 @@ experiment:
     - bench_name: mandelbrot
       bench_version: 0
       num_executions: 10
-      num_warmups: 3
-      delete_output: true
-      num_threads: [1, 2, 4, 8, 16, 32]
+      num_threads: [1, 2, 4, 8, 16, 32, 48]
       inputs:
         image_size: 2048
         output_img: output.bmp
@@ -470,9 +460,7 @@ experiment:
     - bench_name: pi
       bench_version: 0
       num_executions: 10
-      num_warmups: 3
-      delete_output: true
-      num_threads: [1, 2, 4, 8, 16, 32]
+      num_threads: [1, 2, 4, 8, 16, 32, 48]
       inputs:
         num_iterations: 1000000000
         file_output: output.csv
@@ -554,9 +542,7 @@ experiment:
     - bench_name: kmeans
       bench_version: 0
       num_executions: 10
-      num_warmups: 3
-      delete_output: true
-      num_threads: [1, 2, 4, 8, 16, 32]
+      num_threads: [1, 2, 4, 8, 16, 32, 48]
       inputs:
         num_clusters: 10
         iterations: 100

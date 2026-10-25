@@ -1,25 +1,23 @@
-import io
-import json
-import os
-import subprocess
-import sys
-from typing import Any
-
-import cv2
-import duckdb
 import numpy as np
 import pandas as pd
+import sys
+import os
+import io
+import duckdb
 import yaml
+import json
+import subprocess
+import cv2
+import io
 from skimage.metrics import structural_similarity as similarity
-
-ENERGY_EVENTS = "power/energy-pkg/,power/energy-ram/"
+from typing import Dict, List, Tuple, Optional, Any
 
 # ============================================================
 # Bookkeeping
 # ============================================================
 
 
-def save_experiment(conn, plan: dict[str, Any]):
+def save_experiment(conn, plan: Dict[str, Any]):
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         capture_output=True,
@@ -36,7 +34,7 @@ def save_experiment(conn, plan: dict[str, Any]):
     print("[INFO] Saved YAML plan")
 
 
-def save_server(conn, server: dict[str, Any]):
+def save_server(conn, server: Dict[str, Any]):
     exists = conn.execute(
         "SELECT 1 FROM Server WHERE hostname = ?;", (server["hostname"],)
     ).fetchone()
@@ -62,14 +60,14 @@ def save_server(conn, server: dict[str, Any]):
         print(f"[INFO] Server {server['hostname']} already exists")
 
 
-def select_benchmark(conn, name: str, version: int) -> tuple[str, int, str] | None:
+def select_benchmark(conn, name: str, version: int) -> Optional[Tuple[str, int, str]]:
     return conn.execute(
         "SELECT name, version, path FROM Benchmark WHERE name = ? AND version = ?;",
         (name, version),
     ).fetchone()
 
 
-def save_benchmarks(conn, benchmarks: list[dict[str, Any]]):
+def save_benchmarks(conn, benchmarks: List[Dict[str, Any]]):
     for bench in benchmarks:
         if select_benchmark(conn, bench["name"], bench["version"]) is None:
             print(f"[INFO] Saving benchmark {bench['name']} v{bench['version']}")
@@ -91,7 +89,7 @@ def save_benchmarks(conn, benchmarks: list[dict[str, Any]]):
             subprocess.run(cmd, shell=True, executable="/bin/bash", check=True)
 
 
-def save_execution_group(conn, exec_info: dict[str, Any]) -> int:
+def save_execution_group(conn, exec_info: Dict[str, Any]) -> int:
     return conn.execute(
         """
         INSERT INTO ExecutionGroup(type, approx_rate, approx_type, compile_command, num_threads, server, bench_name, bench_version)
@@ -111,7 +109,7 @@ def save_execution_group(conn, exec_info: dict[str, Any]) -> int:
     ).fetchone()[0]
 
 
-def save_exec_input(conn, group_id: int, input_data: dict[str, Any]):
+def save_exec_input(conn, group_id: int, input_data: Dict[str, Any]):
     conn.execute(
         "INSERT INTO ExecutionInput(group_id, input) VALUES (?, ?);",
         (group_id, json.dumps(input_data)),
@@ -126,7 +124,7 @@ def save_execution_run(conn, group_id: int, exec_id: int):
     )
 
 
-def save_exec_envs(conn, group_id: int, envs: dict[str, Any]):
+def save_exec_envs(conn, group_id: int, envs: Dict[str, Any]):
     for name, value in envs.items():
         conn.execute(
             "INSERT INTO ExecutionEnv(group_id, name, value) VALUES (?, ?, ?);",
@@ -137,13 +135,6 @@ def save_exec_envs(conn, group_id: int, envs: dict[str, Any]):
 def save_performance(conn, group_id: int, exec_id: int, name: str, value: float):
     conn.execute(
         "INSERT INTO Performance(group_id, exec_id, name, value) VALUES (?, ?, ?, ?);",
-        (group_id, exec_id, name, value),
-    )
-
-
-def save_energy(conn, group_id: int, exec_id: int, name: str, value: float):
-    conn.execute(
-        "INSERT INTO Energy(group_id, exec_id, name, value) VALUES (?, ?, ?, ?);",
         (group_id, exec_id, name, value),
     )
 
@@ -245,90 +236,36 @@ def metric(
     reference: str,
     prediction: str,
 ):
-    match metric:
-        case "MAPE":
-            save_metric(
-                conn,
-                gid,
-                exec_id,
-                metric,
-                float(mape(reference, prediction)),
-            )
-        case "SSIM":
-            save_metric(conn, gid, exec_id, metric, float(ssim(reference, prediction)))
-        case "MCR":
-            save_metric(conn, gid, exec_id, metric, float(mcr(reference, prediction)))
-        case _:
-            print(f"[ERROR] {metric} is currently not supported")
+    if metric == "MAPE":
+        save_metric(
+            conn,
+            gid,
+            exec_id,
+            metric,
+            float(mape(reference, prediction)),
+        )
+    elif metric == "SSIM":
+        save_metric(conn, gid, exec_id, metric, float(ssim(reference, prediction)))
+    elif metric == "MCR":
+        save_metric(conn, gid, exec_id, metric, float(mcr(reference, prediction)))
+    else:
+        print(f"[ERROR] {metric} is currently not supported")
 
 
 def make(cmd: str):
     subprocess.run(cmd, shell=True, executable="/bin/bash", check=True)
 
 
-def build_bench_cmd(exec_info: dict[str, Any]) -> str:
-    cmd = f"{exec_info['bench_path']}/{exec_info['bench_name']} "
-    for val in exec_info["inputs"].values():
-        cmd += f"{str(val).replace('$PATH', exec_info['bench_path'])} "
-    return cmd
-
-
-def build_env(exec_info: dict[str, Any]) -> dict[str, str]:
-    env = os.environ.copy()
-    env.update(exec_info["env_vars"])
-    return env
-
-
-def warmup(exec_info: dict[str, Any], runs: int):
-    cmd = build_bench_cmd(exec_info)
-    env = build_env(exec_info)
-    for _ in range(runs):
-        subprocess.run(
-            cmd,
-            shell=True,
-            executable="/bin/bash",
-            capture_output=True,
-            text=True,
-            check=False,
-            env=env,
-        )
-
-
-def run_energy(conn, group_id: int, exec_id: int, exec_info: dict[str, Any]) -> bool:
-    cmd = f"perf stat -a -x , -e {ENERGY_EVENTS} " + build_bench_cmd(exec_info)
-
-    try:
-        res = subprocess.run(
-            cmd,
-            shell=True,
-            executable="/bin/bash",
-            capture_output=True,
-            text=True,
-            check=True,
-            env=build_env(exec_info),
-        )
-    except subprocess.CalledProcessError as e:
-        save_exec_error(conn, group_id, exec_id, e.returncode, e.stderr)
-        return False
-
-    for line in res.stderr.strip().splitlines():
-        row = line.strip().split(",")
-        if len(row) < 3:
-            continue
-        try:
-            val = float(row[0])
-        except ValueError:
-            continue
-        save_energy(conn, group_id, exec_id, row[2], val)
-    return True
-
-
-def run_benchmark(conn, group_id: int, exec_id: int, exec_info: dict[str, Any]):
+def run_benchmark(conn, group_id: int, exec_id: int, exec_info: Dict[str, Any]):
     # Build command
     cmd = "/usr/bin/time -f 'elapsed,user,sys\n%e,%U,%S' perf stat -x , "
-    cmd += build_bench_cmd(exec_info)
+    cmd += f"{exec_info['bench_path']}/{exec_info['bench_name']} "
+    for _, val in exec_info["inputs"].items():
+        cmd += f"{str(val).replace('$PATH', exec_info['bench_path'])} "
 
     try:
+        env = os.environ.copy()
+        env.update(exec_info["env_vars"])
         res = subprocess.run(
             cmd,
             shell=True,
@@ -336,7 +273,7 @@ def run_benchmark(conn, group_id: int, exec_id: int, exec_info: dict[str, Any]):
             capture_output=True,
             text=True,
             check=True,
-            env=build_env(exec_info),
+            env=env,
         )
 
         # Parse output
@@ -406,14 +343,7 @@ def pos_process(cmd: str):
 # ============================================================
 
 
-def remove_output(path: str):
-    try:
-        os.remove(path)
-    except FileNotFoundError:
-        pass
-
-
-def execution(conn, executions: list[dict[str, Any]], server: str):
+def execution(conn, executions: List[Dict[str, Any]], server: str):
     for entry in executions:
         res = select_benchmark(conn, entry["bench_name"], entry["bench_version"])
         if not res:
@@ -423,9 +353,6 @@ def execution(conn, executions: list[dict[str, Any]], server: str):
         if sum(1 for v in entry["variants"] if "baseline" in v) > 1:
             print("[ERROR] There should be only one baseline per variant")
             sys.exit(-1)
-
-        delete_output = entry.get("delete_output", False)
-        references = set()
 
         baseline_gid = -1
         baseline_id = -1
@@ -463,12 +390,9 @@ def execution(conn, executions: list[dict[str, Any]], server: str):
                     save_exec_input(conn, gid, entry["inputs"])
                     save_exec_envs(conn, gid, variant["env_vars"])
 
-                    warmup(group_meta, entry.get("num_warmups", 3))
-
                     for id in range(iterations):
                         save_execution_run(conn, gid, id)
-                        if run_energy(conn, gid, id, group_meta):
-                            run_benchmark(conn, gid, id, group_meta)
+                        run_benchmark(conn, gid, id, group_meta)
                         update_exec_endtime(conn, gid, id)
 
                         pos_process(
@@ -507,15 +431,6 @@ def execution(conn, executions: list[dict[str, Any]], server: str):
                                 .replace("$ID_BASE", str(baseline_id))
                             )
                             metric(conn, gid, id, mtype, pred, ref)
-
-                            if delete_output:
-                                # The baseline output is still needed by the
-                                # next variants, so it is removed at the end
-                                remove_output(pred)
-                                references.add(ref)
-
-        for ref in references:
-            remove_output(ref)
 
 
 def run_plan(conn, plan_path: str):

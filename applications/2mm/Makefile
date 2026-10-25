@@ -1,6 +1,6 @@
-CXX=/home/joao.briganti/llvm-project/build/bin/clang++
-CFLAGS:=-Wall -Wextra -O3 -march=native -fopenmp -I/home/joao.briganti/llvm-project/build/lib/clang/21/include -L/home/joao.briganti/llvm-project/build/runtimes/runtimes-bins/openmp/runtime/src
-OMPFLAGS:=-fopenmp -Wl,-rpath,/home/joao.briganti/llvm-project/build/runtimes/runtimes-bins/openmp/runtime/src -lomp
+CXX=/home/lovelace/proj/proj1163/j215217/llvm-project/build/bin/clang++
+CFLAGS:=-Wall -Wextra -O3 -march=native -fopenmp -I/home/lovelace/proj/proj1163/j215217/llvm-project/build/lib/clang/21/include -L//home/lovelace/proj/proj1163/j215217/llvm-project/build/runtimes/runtimes-bins/openmp/runtime/src
+OMPFLAGS:=-fopenmp -Wl,-rpath,//home/lovelace/proj/proj1163/j215217/llvm-project/build/runtimes/runtimes-bins/openmp/runtime/src -lomp
 NUM_THREADS?=$(shell nproc)
 DROP?=5
 
